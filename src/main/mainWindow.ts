@@ -12,6 +12,7 @@ import {
     type BrowserWindowConstructorOptions,
     Menu,
     type MenuItemConstructorOptions,
+    nativeImage,
     nativeTheme,
     type Rectangle,
     screen,
@@ -276,16 +277,40 @@ function initDevtoolsListeners(win: BrowserWindow) {
 function initStaticTitle(win: BrowserWindow) {
     const listener = (e: { preventDefault: Function }) => e.preventDefault();
 
+    const getTitle = () => Settings.store.customStaticTitle?.trim() || "Equibop";
+
     if (Settings.store.staticTitle) win.on("page-title-updated", listener);
 
     addSettingsListener("staticTitle", enabled => {
         if (enabled) {
-            win.setTitle("Equibop");
+            win.setTitle(getTitle());
             win.on("page-title-updated", listener);
         } else {
             win.off("page-title-updated", listener);
         }
     });
+
+    addSettingsListener("customStaticTitle", () => {
+        if (Settings.store.staticTitle) win.setTitle(getTitle());
+    });
+}
+
+function initWindowIcon(win: BrowserWindow) {
+    const applyIcon = (iconPath?: string) => {
+        if (process.platform === "darwin") return;
+        try {
+            const img = iconPath
+                ? nativeImage.createFromPath(iconPath)
+                : nativeImage.createFromPath(
+                      join(STATIC_DIR, process.platform === "win32" ? "icon.ico" : "icon.png")
+                  );
+            win.setIcon(img);
+        } catch (e) {
+            console.error("Failed to set window icon:", e);
+        }
+    };
+
+    addSettingsListener("customWindowIcon", applyIcon);
 }
 
 function getWindowBoundsOptions(): BrowserWindowConstructorOptions {
@@ -338,11 +363,13 @@ function buildBrowserWindowOptions(): BrowserWindowConstructorOptions {
     const options: BrowserWindowConstructorOptions = {
         show: Settings.store.enableSplashScreen === false && !CommandLine.values["start-minimized"],
         backgroundColor,
-        ...(process.platform === "win32"
-            ? { icon: join(STATIC_DIR, "icon.ico") }
-            : process.platform === "linux"
-              ? { icon: join(STATIC_DIR, "icon.png") }
-              : {}),
+        ...(process.platform !== "darwin"
+            ? {
+                  icon: Settings.store.customWindowIcon
+                      ? Settings.store.customWindowIcon
+                      : join(STATIC_DIR, process.platform === "win32" ? "icon.ico" : "icon.png")
+              }
+            : {}),
         webPreferences: {
             nodeIntegration: false,
             sandbox: true,
@@ -376,7 +403,7 @@ function buildBrowserWindowOptions(): BrowserWindowConstructorOptions {
     }
 
     if (staticTitle) {
-        options.title = "Equibop";
+        options.title = Settings.store.customStaticTitle?.trim() || "Equibop";
     }
 
     if (process.platform === "darwin") {
@@ -437,6 +464,7 @@ function createMainWindow() {
     initSpellCheck(win);
     initDevtoolsListeners(win);
     initStaticTitle(win);
+    initWindowIcon(win);
 
     addSplashLog();
 

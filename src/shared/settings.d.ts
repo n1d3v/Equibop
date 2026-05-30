@@ -15,6 +15,8 @@ export interface Settings {
     middleClickAutoscroll?: boolean;
     openLinksWithElectron?: boolean;
     staticTitle?: boolean;
+    customStaticTitle?: string;
+    customWindowIcon?: string;
     enableMenu?: boolean;
     disableSmoothScroll?: boolean;
     hardwareAcceleration?: boolean;

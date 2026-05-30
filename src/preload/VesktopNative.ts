@@ -68,7 +68,8 @@ export const VesktopNative = {
         selectEquicordDir: (value?: null) =>
             invoke<"cancelled" | "invalid" | "ok">(IpcEvents.SELECT_VENCORD_DIR, value),
         chooseUserAsset: (asset: string, value?: null) =>
-            invoke<"cancelled" | "invalid" | "ok" | "failed">(IpcEvents.CHOOSE_USER_ASSET, asset, value)
+            invoke<"cancelled" | "invalid" | "ok" | "failed">(IpcEvents.CHOOSE_USER_ASSET, asset, value),
+        selectWindowIcon: () => invoke<"cancelled" | "ok">(IpcEvents.SELECT_WINDOW_ICON)
     },
     settings: {
         get: () => sendSync<Settings>(IpcEvents.GET_SETTINGS),

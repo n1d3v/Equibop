@@ -13,6 +13,7 @@ import { Settings, useSettings } from "renderer/settings";
 import { isMac, isWindows } from "renderer/utils";
 
 import { ArRPCSettingsButton } from "./ArRPCSettings";
+import { CustomSettingsSection } from "./CustomSettings";
 import { AutoStartToggle } from "./AutoStartToggle";
 import { DeveloperOptionsButton } from "./DeveloperOptions";
 import { DiscordBranchPicker } from "./DiscordBranchPicker";
@@ -68,6 +69,7 @@ const SettingsOptions: Record<string, Array<BooleanSetting | SettingsComponent>>
             description: 'Makes the window title "Equibop" instead of changing to the current page',
             defaultValue: false
         },
+        CustomSettingsSection,
         {
             key: "enableMenu",
             title: "Enable Menu Bar",

@@ -14,6 +14,7 @@ import { pathToFileURL } from "url";
 import { DATA_DIR } from "./constants";
 import { AppEvents } from "./events";
 import { mainWin } from "./mainWindow";
+import { Settings } from "./settings";
 import { fileExistsAsync } from "./utils/fileExists";
 import { handle } from "./utils/ipcWrappers";
 
@@ -73,6 +74,20 @@ export async function handleVesktopAssetsProtocol(path: string, req: Request) {
 
     return net.fetch(pathToFileURL(join(STATIC_DIR, DEFAULT_ASSETS[asset])).href);
 }
+
+handle(IpcEvents.SELECT_WINDOW_ICON, async () => {
+    const res = await dialog.showOpenDialog(mainWin, {
+        properties: ["openFile"],
+        title: "Select a window icon",
+        defaultPath: app.getPath("pictures"),
+        filters: [{ name: "Images", extensions: ["ico", "png", "jpg", "jpeg"] }]
+    });
+
+    if (res.canceled || !res.filePaths.length) return "cancelled";
+
+    Settings.store.customWindowIcon = res.filePaths[0];
+    return "ok";
+});
 
 handle(IpcEvents.CHOOSE_USER_ASSET, async (_event, asset: UserAssetType, value?: null) => {
     if (!CUSTOMIZABLE_ASSETS.includes(asset)) {
