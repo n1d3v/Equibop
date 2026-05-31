@@ -1,15 +1,20 @@
-import { BaseText, Button, CheckedTextInput } from "@equicord/types/components";
+import { BaseText, Button } from "@equicord/types/components";
 import { Margins } from "@equicord/types/utils";
-import { showToast } from "@equicord/types/webpack/common";
+import { showToast, useState } from "@equicord/types/webpack/common";
 import { useSettings } from "renderer/settings";
 
 import { cl, SettingsComponent } from "./Settings";
 
 export const CustomSettingsSection: SettingsComponent = () => {
     const settings = useSettings();
+    const [titleDraft, setTitleDraft] = useState<string>(settings.customStaticTitle ?? "");
 
-    const onTitleChange = (value: string) => {
-        settings.customStaticTitle = value || undefined;
+    const onTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setTitleDraft(e.target.value);
+    };
+
+    const onTitleBlur = () => {
+        settings.customStaticTitle = titleDraft.trim() || undefined;
     };
 
     const onSelectIcon = async () => {
@@ -32,13 +37,29 @@ export const CustomSettingsSection: SettingsComponent = () => {
                 </BaseText>
                 <BaseText size="sm" style={{ color: "var(--text-muted)", marginBottom: "8px" }}>
                     Override the window title shown when "Static Title" is enabled. Leave blank to use "Equibop".
+                    Supports custom formatting tokens, look at FORMATTING_DOC.md in the forked repository to learn how to use it.
                 </BaseText>
                 <div style={!settings.staticTitle ? { opacity: 0.5, pointerEvents: "none" } : undefined}>
-                    <CheckedTextInput
+                    <input
+                        type="text"
+                        className="default-colors"
                         placeholder="Equibop"
-                        value={settings.customStaticTitle ?? ""}
+                        value={titleDraft}
                         onChange={onTitleChange}
-                        validate={() => true}
+                        onBlur={onTitleBlur}
+                        onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+                            if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                        }}
+                        style={{
+                            width: "100%",
+                            padding: "8px 12px",
+                            borderRadius: "4px",
+                            border: "1px solid var(--input-background)",
+                            background: "var(--input-background)",
+                            color: "var(--text-normal)",
+                            fontSize: "14px",
+                            boxSizing: "border-box"
+                        }}
                     />
                 </div>
                 {!settings.staticTitle && (

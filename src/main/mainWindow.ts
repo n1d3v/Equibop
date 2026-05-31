@@ -10,6 +10,7 @@ import {
     app,
     BrowserWindow,
     type BrowserWindowConstructorOptions,
+    ipcMain,
     Menu,
     type MenuItemConstructorOptions,
     nativeImage,
@@ -44,6 +45,18 @@ import { downloadVencordAsar, ensureVencordFiles } from "./utils/vencordLoader";
 import { VENCORD_DIR } from "./vencordDir";
 
 let isQuitting = false;
+
+let resolvedStaticTitle: string | null = null;
+
+const TITLE_FORMAT_TOKENS = /\{(?:username|display_name|ping|ping_count|channel|server|app_name|serv_online_count|serv_member_count|channel_desc)\}|if\(\w+\)\{/;
+const hasFormatTokens = (s: string) => TITLE_FORMAT_TOKENS.test(s);
+
+ipcMain.handle(IpcEvents.SET_STATIC_TITLE, (_e, title: string) => {
+    resolvedStaticTitle = title;
+    if (mainWin && !mainWin.isDestroyed() && Settings.store.staticTitle) {
+        mainWin.setTitle(title);
+    }
+});
 
 applyDeckKeyboardFix();
 
@@ -277,7 +290,12 @@ function initDevtoolsListeners(win: BrowserWindow) {
 function initStaticTitle(win: BrowserWindow) {
     const listener = (e: { preventDefault: Function }) => e.preventDefault();
 
-    const getTitle = () => Settings.store.customStaticTitle?.trim() || "Equibop";
+    const getTitle = () => {
+        const custom = Settings.store.customStaticTitle?.trim();
+        if (!custom) return "Equibop";
+        if (hasFormatTokens(custom)) return resolvedStaticTitle ?? "Equibop";
+        return custom;
+    };
 
     if (Settings.store.staticTitle) win.on("page-title-updated", listener);
 
@@ -291,6 +309,8 @@ function initStaticTitle(win: BrowserWindow) {
     });
 
     addSettingsListener("customStaticTitle", () => {
+        const newCustom = Settings.store.customStaticTitle?.trim();
+        if (!newCustom || !hasFormatTokens(newCustom)) resolvedStaticTitle = null;
         if (Settings.store.staticTitle) win.setTitle(getTitle());
     });
 }
@@ -403,7 +423,8 @@ function buildBrowserWindowOptions(): BrowserWindowConstructorOptions {
     }
 
     if (staticTitle) {
-        options.title = Settings.store.customStaticTitle?.trim() || "Equibop";
+        const custom = Settings.store.customStaticTitle?.trim();
+        options.title = custom && !hasFormatTokens(custom) ? custom : "Equibop";
     }
 
     if (process.platform === "darwin") {

@@ -50,6 +50,7 @@ export const VesktopNative = {
                 originalPlatform: string;
                 spoofedPlatform: string | null;
             }>(IpcEvents.GET_PLATFORM_SPOOF_INFO),
+        setStaticTitle: (title: string) => invoke<void>(IpcEvents.SET_STATIC_TITLE, title),
         getRendererCss: () => invoke<string>(IpcEvents.GET_VESKTOP_RENDERER_CSS),
         onRendererCssUpdate: (cb: (newCss: string) => void) => {
             if (!IS_DEV) return;
