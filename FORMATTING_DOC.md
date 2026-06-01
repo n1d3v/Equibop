@@ -54,6 +54,6 @@ Conditionals can nest and you may also use `!in_*`.
 ## Examples
 
 - mIRC-like title:
-   - ```if(in_server){mIRC - }if(in_server){[{channel}}if(in_dm){{channel}}if(in_server){ [{serv_online_count}] [+{server} {serv_member_count}]: {channel_desc}}```
+   - ```if(in_server){mIRC - }if(in_server){[{channel}}if(in_dm){mIRC - [{channel}]}if(in_server){ [{serv_online_count}] [+nt {serv_member_count}]:  {server}; if(in_server){if(!in_forum){ {channel_desc}}}}```
 - Skype-like title:
    - ```Skype™ - {username}```
