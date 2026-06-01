@@ -2,7 +2,7 @@ import { onceReady } from "@equicord/types/webpack";
 import { ChannelStore, FluxDispatcher, SelectedChannelStore, SelectedGuildStore, UserStore } from "@equicord/types/webpack/common";
 import { Settings } from "renderer/settings";
 
-const FORMAT_PATTERN = /\{(?:username|display_name|ping|ping_count|channel|server|app_name|serv_online_count|serv_member_count|channel_desc)\}|if\(\w+\)\{/;
+const FORMAT_PATTERN = /\{(?:username|display_name|ping|ping_count|channel|server|app_name|serv_online_count|serv_member_count|channel_desc)\}|if\(!?\w+\)\{|else\{/;
 
 function hasFormatTokens(s: string) {
     return FORMAT_PATTERN.test(s);
@@ -52,7 +52,9 @@ function applyConditionals(format: string, conditions: Record<string, boolean>):
             break;
         }
 
-        const condition = format.slice(ifStart + 3, condEnd).toLowerCase();
+        const rawCondition = format.slice(ifStart + 3, condEnd);
+        const negated = rawCondition.startsWith("!");
+        const condition = (negated ? rawCondition.slice(1) : rawCondition).toLowerCase();
 
         if (format[condEnd + 1] !== "{") {
             result += format.slice(ifStart, condEnd + 1);
@@ -71,9 +73,28 @@ function applyConditionals(format: string, conditions: Record<string, boolean>):
         }
 
         const content = format.slice(condEnd + 2, j - 1);
+        const condValue = conditions[condition] ?? false;
+        const passes = negated ? !condValue : condValue;
 
-        if (conditions[condition] ?? false) {
-            result += content;
+        let elseContent = "";
+        if (format.slice(j, j + 5) === "else{") {
+            let depth2 = 1;
+            let k = j + 5;
+            while (k < format.length && depth2 > 0) {
+                if (format[k] === "{") depth2++;
+                else if (format[k] === "}") depth2--;
+
+                k++;
+            }
+
+            elseContent = format.slice(j + 5, k - 1);
+            j = k;
+        }
+
+        if (passes) {
+            result += applyConditionals(content, conditions);
+        } else if (elseContent) {
+            result += applyConditionals(elseContent, conditions);
         }
 
         i = j;
@@ -159,7 +180,8 @@ function resolveTitle(format: string): string {
         has_ping: pingCount > 0,
         no_ping: pingCount === 0,
         has_channel: channel !== "",
-        has_channel_desc: channelDesc !== ""
+        has_channel_desc: channelDesc !== "",
+        in_forum: channelObj?.type === 15
     };
 
     const tokens: Record<string, string> = {
