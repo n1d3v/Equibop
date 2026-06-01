@@ -47,7 +47,7 @@ If the condition is true, `content` is included. If false, it's dropped entirely
 | `has_channel` | A channel is selected |
 | `has_channel_desc` | The current channel has a topic set |
 
-Conditionals don't nest.
+Conditionals can nest and you may also use `!in_*`.
 
 ---
 
