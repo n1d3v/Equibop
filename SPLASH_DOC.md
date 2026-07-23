@@ -3,7 +3,7 @@ This fork of Equibop has support for custom splash screens via HTML files, these
 
 This allows you to better suit the program for what you are trying to customize Equibop as.
 
-## <splashSettings>
+## `<splashSettings>`
 To set the width and height of the splash screen window, you can put the `<splashSettings>` tag inside of `<head>`, you can configure it like:
 
 ```html
