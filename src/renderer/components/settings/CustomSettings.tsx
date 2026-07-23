@@ -111,16 +111,7 @@ export const CustomSettingsSection: SettingsComponent = () => {
                 <BaseText size="sm" style={{ color: "var(--text-muted)", marginBottom: "8px" }}>
                     Replace the splash screen shown while Equibop is loading with your own HTML file.
                     The file can include its own independent CSS and JavaScript as you see fit.
-                </BaseText>
-                <BaseText size="sm" style={{ color: "var(--text-muted)", marginBottom: "8px" }}>
-                    The splash window defaults to 300x350. To use a different size, add{" "}
-                    <code>{'<splashSettings width="300" height="300">'}</code> inside your file's{" "}
-                    <code>&lt;head&gt;</code>.
-                </BaseText>
-                <BaseText size="sm" style={{ color: "var(--text-muted)", marginBottom: "8px" }}>
-                    The splash window is transparent by default, so your HTML needs its own explicit background
-                    (e.g. <code>body {"{"} background: #313338; {"}"}</code>) or it may look like nothing is
-                    showing up.
+                    Look at SPLASH_DOC.md in the forked repository to learn how to create for it.
                 </BaseText>
                 {settings.customSplashHtml && (
                     <BaseText

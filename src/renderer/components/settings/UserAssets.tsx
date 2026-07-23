@@ -71,7 +71,7 @@ function AssetsModalContent() {
         <div className="vcd-user-assets">
             <section>
                 <BaseText size="md" weight="medium" tag="h3">
-                    Tray Icons
+                    Tray icons
                 </BaseText>
                 <div className="vcd-user-assets-actions">
                     <div className="vcd-user-assets-buttons">
