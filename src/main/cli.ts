@@ -278,7 +278,7 @@ function setupSecondInstanceHandler() {
     }
 
     app.on("second-instance", (_event, commandLine, _cwd, data: any) => {
-        if (data.query && data.responseFile) {
+        if (data?.query && data?.responseFile) {
             const allowedQueries: string[] = [
                 IpcCommands.QUERY_IS_IN_CALL,
                 IpcCommands.QUERY_VOICE_CHANNEL_NAME,
@@ -302,7 +302,7 @@ function setupSecondInstanceHandler() {
             return;
         }
 
-        if (data.IS_DEV) {
+        if (data?.IS_DEV) {
             app.quit();
             return;
         }
@@ -340,13 +340,12 @@ function checkForSecondInstance() {
     if (checkCommandLineForQueryCommands()) return;
 
     if (!app.requestSingleInstanceLock({ IS_DEV })) {
-        if (IS_DEV) {
-            console.log("Equibop is already running. Quitting previous instance...");
-            return;
-        } else {
+        if (!IS_DEV) {
             console.log("Equibop is already running. Quitting...");
             app.exit(0);
         }
+
+        console.log("Equibop is already running. Quitting previous instance...");
     }
 
     setupSecondInstanceHandler();
