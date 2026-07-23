@@ -4,6 +4,11 @@ import { join } from "path";
 import { addAssetsCar } from "./addAssetsCar.mjs";
 
 async function copyArRPCBinaries(context) {
+    if (process.env.EQUIBOP_NO_ARRPC === "1") {
+        console.log("Skipping arRPC binary bundling (no-arrpc build)");
+        return;
+    }
+
     const { electronPlatformName, arch, appOutDir } = context;
 
     // map electron-builder arch enum to string

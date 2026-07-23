@@ -12,6 +12,7 @@ declare global {
 
     export var IS_DEV: boolean;
     export var EQUIBOP_GIT_HASH: string;
+    export var NO_ARRPC: boolean;
 }
 
 export {};

@@ -130,7 +130,7 @@
             <input type="checkbox" name="autoStart" />
         </label>
 
-        <label>
+        <label id="richPresenceRow">
             <div>
                 <h2>Rich Presence</h2>
                 <span
@@ -164,6 +164,10 @@
 </body>
 
 <script>
+    if (new URLSearchParams(location.search).get("noArrpc") === "true") {
+        document.getElementById("richPresenceRow")?.remove();
+    }
+
     cancel.onclick = () => console.info("cancel");
     submit.onclick = e => {
         const form = document.querySelector("form");

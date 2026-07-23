@@ -43,7 +43,7 @@ export function createFirstLaunchTour() {
 
     makeLinksOpenExternally(win);
 
-    loadView(win, "first-launch.html");
+    loadView(win, "first-launch.html", new URLSearchParams({ noArrpc: String(NO_ARRPC) }));
     win.webContents.addListener("console-message", (_e, _l, msg) => {
         if (msg === "cancel") return app.exit();
 
@@ -53,7 +53,7 @@ export function createFirstLaunchTour() {
         State.store.firstLaunch = false;
         Settings.store.discordBranch = data.discordBranch;
         Settings.store.minimizeToTray = !!data.minimizeToTray;
-        Settings.store.arRPC = !!data.richPresence;
+        Settings.store.arRPC = !NO_ARRPC && !!data.richPresence;
 
         if (data.autoStart) autoStart.enable();
 
