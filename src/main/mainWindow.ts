@@ -21,7 +21,7 @@ import {
 } from "electron";
 import { IpcCommands, IpcEvents } from "shared/IpcEvents";
 import { STATIC_DIR } from "shared/paths";
-import { hasStaticTitleTokens } from "shared/staticTitleFormat";
+import { hasStaticTitleTokens, sanitizeTitle } from "shared/staticTitleFormat";
 import { isTruthy } from "shared/utils/guards";
 import { once } from "shared/utils/once";
 import type { SettingsStore } from "shared/utils/SettingsStore";
@@ -50,9 +50,9 @@ let isQuitting = false;
 let resolvedStaticTitle: string | null = null;
 
 ipcMain.handle(IpcEvents.SET_STATIC_TITLE, (_e, title: string) => {
-    resolvedStaticTitle = title;
+    resolvedStaticTitle = sanitizeTitle(title);
     if (mainWin && !mainWin.isDestroyed() && Settings.store.staticTitle) {
-        mainWin.setTitle(title);
+        mainWin.setTitle(resolvedStaticTitle);
     }
 });
 
@@ -292,7 +292,7 @@ function initStaticTitle(win: BrowserWindow) {
         const custom = Settings.store.customStaticTitle?.trim();
         if (!custom) return "Equibop";
         if (hasStaticTitleTokens(custom)) return resolvedStaticTitle ?? "Equibop";
-        return custom;
+        return sanitizeTitle(custom);
     };
 
     if (Settings.store.staticTitle) win.on("page-title-updated", listener);

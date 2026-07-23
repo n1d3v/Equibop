@@ -2,6 +2,7 @@ import { BaseText, Button } from "@equicord/types/components";
 import { Margins } from "@equicord/types/utils";
 import { showToast, useState } from "@equicord/types/webpack/common";
 import { useSettings } from "renderer/settings";
+import { stripLineBreaks } from "shared/staticTitleFormat";
 
 import { cl, SettingsComponent } from "./Settings";
 
@@ -10,7 +11,7 @@ export const CustomSettingsSection: SettingsComponent = () => {
     const [titleDraft, setTitleDraft] = useState<string>(settings.customStaticTitle ?? "");
 
     const onTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setTitleDraft(e.target.value);
+        setTitleDraft(stripLineBreaks(e.target.value));
     };
 
     const onTitleBlur = () => {

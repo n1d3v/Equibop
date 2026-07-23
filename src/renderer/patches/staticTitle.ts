@@ -1,7 +1,7 @@
 import { onceReady } from "@equicord/types/webpack";
 import { ChannelStore, FluxDispatcher, SelectedChannelStore, SelectedGuildStore, UserStore } from "@equicord/types/webpack/common";
 import { Settings } from "renderer/settings";
-import { hasStaticTitleTokens } from "shared/staticTitleFormat";
+import { hasStaticTitleTokens, sanitizeTitle } from "shared/staticTitleFormat";
 
 function parseDiscordTitle(title: string) {
     let ping = "";
@@ -225,7 +225,8 @@ function resolveTitle(format: string): string {
     );
     const with12h = withTime.replace(/\{12h(-caps)?\}/g, (_match, capsFlag) => resolveAmPmToken(!!capsFlag));
 
-    return with12h.replace(/\{(\w+)\}/g, (match, key) => tokens[key] ?? match);
+    const resolved = with12h.replace(/\{(\w+)\}/g, (match, key) => tokens[key] ?? match);
+    return sanitizeTitle(resolved);
 }
 
 function pushResolvedTitle() {
