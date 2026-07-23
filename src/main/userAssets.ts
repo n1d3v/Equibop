@@ -122,6 +122,20 @@ handle(IpcEvents.SELECT_WINDOW_ICON, async () => {
     return "ok";
 });
 
+handle(IpcEvents.SELECT_SPLASH_HTML, async () => {
+    const res = await dialog.showOpenDialog(mainWin, {
+        properties: ["openFile"],
+        title: "Select a custom splash screen HTML file",
+        defaultPath: app.getPath("documents"),
+        filters: [{ name: "HTML Files", extensions: ["html", "htm"] }]
+    });
+
+    if (res.canceled || !res.filePaths.length) return "cancelled";
+
+    Settings.store.customSplashHtml = res.filePaths[0];
+    return "ok";
+});
+
 handle(IpcEvents.CHOOSE_USER_ASSET, async (_event, asset: UserAssetType, value?: null) => {
     if (!CUSTOMIZABLE_ASSETS.includes(asset)) {
         throw `Invalid asset: ${asset}`;

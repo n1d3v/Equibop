@@ -30,6 +30,18 @@ export const CustomSettingsSection: SettingsComponent = () => {
         showToast("Window icon reset to default.");
     };
 
+    const onSelectSplashHtml = async () => {
+        const res = await VesktopNative.fileManager.selectSplashHtml();
+        if (res === "ok") {
+            showToast("Custom splash screen updated. It will apply next launch.");
+        }
+    };
+
+    const onClearSplashHtml = () => {
+        settings.customSplashHtml = undefined;
+        showToast("Splash screen reset to default.");
+    };
+
     return (
         <div className={cl("custom-settings")}>
             <div style={{ marginBottom: "16px" }}>
@@ -86,6 +98,42 @@ export const CustomSettingsSection: SettingsComponent = () => {
                     <Button onClick={onSelectIcon}>Choose Icon</Button>
                     {settings.customWindowIcon && (
                         <Button variant="secondary" onClick={onClearIcon}>
+                            Reset to Default
+                        </Button>
+                    )}
+                </div>
+            </div>
+
+            <div style={{ marginTop: "16px" }}>
+                <BaseText size="md" weight="medium" tag="h3" className={Margins.bottom8}>
+                    Custom Splash Screen
+                </BaseText>
+                <BaseText size="sm" style={{ color: "var(--text-muted)", marginBottom: "8px" }}>
+                    Replace the splash screen shown while Equibop is loading with your own HTML file.
+                    The file can include its own independent CSS and JavaScript as you see fit.
+                </BaseText>
+                <BaseText size="sm" style={{ color: "var(--text-muted)", marginBottom: "8px" }}>
+                    The splash window defaults to 300x350. To use a different size, add{" "}
+                    <code>{'<splashSettings width="300" height="300">'}</code> inside your file's{" "}
+                    <code>&lt;head&gt;</code>.
+                </BaseText>
+                <BaseText size="sm" style={{ color: "var(--text-muted)", marginBottom: "8px" }}>
+                    The splash window is transparent by default, so your HTML needs its own explicit background
+                    (e.g. <code>body {"{"} background: #313338; {"}"}</code>) or it may look like nothing is
+                    showing up.
+                </BaseText>
+                {settings.customSplashHtml && (
+                    <BaseText
+                        size="sm"
+                        style={{ color: "var(--text-muted)", marginBottom: "8px", wordBreak: "break-all" }}
+                    >
+                        Current: {settings.customSplashHtml}
+                    </BaseText>
+                )}
+                <div style={{ display: "flex", gap: "8px" }}>
+                    <Button onClick={onSelectSplashHtml}>Choose HTML File</Button>
+                    {settings.customSplashHtml && (
+                        <Button variant="secondary" onClick={onClearSplashHtml}>
                             Reset to Default
                         </Button>
                     )}

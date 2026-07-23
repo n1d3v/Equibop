@@ -71,7 +71,8 @@ export const VesktopNative = {
         chooseUserAsset: (asset: string, value?: null) =>
             invoke<"cancelled" | "invalid" | "ok" | "failed">(IpcEvents.CHOOSE_USER_ASSET, asset, value),
         chooseAllTrayAssets: () => invoke<"cancelled" | "ok" | "failed">(IpcEvents.CHOOSE_ALL_TRAY_ASSETS),
-        selectWindowIcon: () => invoke<"cancelled" | "ok">(IpcEvents.SELECT_WINDOW_ICON)
+        selectWindowIcon: () => invoke<"cancelled" | "ok">(IpcEvents.SELECT_WINDOW_ICON),
+        selectSplashHtml: () => invoke<"cancelled" | "ok">(IpcEvents.SELECT_SPLASH_HTML)
     },
     settings: {
         get: () => sendSync<Settings>(IpcEvents.GET_SETTINGS),
