@@ -33,7 +33,7 @@ Not tied to Discord states, useful for those who want a mIRC-style setup.
 | `{12h}` | The current AM/PM indicator (`am`/`pm`) |
 | `{12h-caps}` | Same as `{12h}`, but capitalized (`AM`/`PM`) |
 
-The {time} token and its derivatives all use 24-hour time unless {12h} / {12h-caps} is added, it'll then automatically switch to 12-hour time.
+The `{time}` token and its derivatives all use 24-hour time unless `{12h}` / `{12h-caps}` is added, it'll then automatically switch to 12-hour time.
 
 ---
 
