@@ -38,6 +38,7 @@ export interface Settings {
     enableTaskbarFlashing?: boolean;
     disableMinSize?: boolean;
     clickTrayToShowHide?: boolean;
+    tray16BitColor?: boolean;
     customTitleBar?: boolean;
 
     enableSplashScreen?: boolean;

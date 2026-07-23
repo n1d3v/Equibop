@@ -15,6 +15,7 @@ import { AppEvents } from "./events";
 import { Settings } from "./settings";
 import { resolveAssetPath } from "./userAssets";
 import { clearData } from "./utils/clearData";
+import { quantizeTo16BitColor } from "./utils/trayColor";
 import { downloadVencordAsar } from "./utils/vencordLoader";
 
 type TrayVariant = "tray" | "trayUnread" | "traySpeaking" | "trayIdle" | "trayMuted" | "trayDeafened";
@@ -42,15 +43,23 @@ const trayPixmapCache = new Map<string, Buffer>();
 let useNativeTray = false;
 let nativeTrayInitialized = false;
 
+async function getTrayCacheKey(variant: TrayVariant): Promise<string> {
+    const path = await resolveAssetPath(variant);
+    return `${path}|${Settings.store.tray16BitColor ? "16bit" : "full"}`;
+}
+
 async function getCachedTrayImage(variant: TrayVariant): Promise<NativeImage> {
     const path = await resolveAssetPath(variant);
+    const cacheKey = await getTrayCacheKey(variant);
 
-    const cached = trayImageCache.get(path);
+    const cached = trayImageCache.get(cacheKey);
     if (cached) return cached;
 
     const image = nativeImage.createFromPath(path);
-    const resized = image.resize({ width: 32, height: 32 });
-    trayImageCache.set(path, resized);
+    let resized = image.resize({ width: 32, height: 32 });
+    if (Settings.store.tray16BitColor) resized = quantizeTo16BitColor(resized);
+
+    trayImageCache.set(cacheKey, resized);
 
     return resized;
 }
@@ -87,35 +96,37 @@ function nativeImageToPixmap(image: NativeImage): Promise<Buffer> {
 }
 
 async function getCachedTrayPixmap(variant: TrayVariant): Promise<Buffer> {
-    const path = await resolveAssetPath(variant);
-    const cached = trayPixmapCache.get(path);
+    const cacheKey = await getTrayCacheKey(variant);
+    const cached = trayPixmapCache.get(cacheKey);
     if (cached) return cached;
 
     const image = await getCachedTrayImage(variant);
     const pixmap = await nativeImageToPixmap(image);
-    trayPixmapCache.set(path, pixmap);
+    trayPixmapCache.set(cacheKey, pixmap);
 
     return pixmap;
 }
 
-const userAssetChangedListener = async (asset: string) => {
-    if (!asset.startsWith("tray")) return;
+async function refreshTrayIcon() {
+    trayImageCache.clear();
+    trayPixmapCache.clear();
 
     try {
         if (useNativeTray && nativeSNI) {
-            trayImageCache.clear();
-            trayPixmapCache.clear();
             const pixmap = await getCachedTrayPixmap(trayVariant);
             nativeSNI.setStatusNotifierIcon(pixmap);
         } else if (tray) {
-            trayImageCache.clear();
-            trayPixmapCache.clear();
             const image = await getCachedTrayImage(trayVariant);
             tray.setImage(image);
         }
     } catch (e) {
-        console.error("[Tray] Failed to update tray icon on asset change:", e);
+        console.error("[Tray] Failed to refresh tray icon:", e);
     }
+}
+
+const userAssetChangedListener = (asset: string) => {
+    if (!asset.startsWith("tray")) return;
+    refreshTrayIcon();
 };
 
 async function updateTrayIconNative(variant: TrayVariant) {
@@ -160,6 +171,10 @@ if (!AppEvents.listeners("userAssetChanged").includes(userAssetChangedListener))
 if (!AppEvents.listeners("setTrayVariant").includes(setTrayVariantListener)) {
     AppEvents.on("setTrayVariant", setTrayVariantListener);
 }
+
+Settings.addChangeListener("tray16BitColor", () => {
+    refreshTrayIcon();
+});
 
 export function destroyTray() {
     AppEvents.off("userAssetChanged", userAssetChangedListener);

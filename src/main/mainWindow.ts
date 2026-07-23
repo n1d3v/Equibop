@@ -21,6 +21,7 @@ import {
 } from "electron";
 import { IpcCommands, IpcEvents } from "shared/IpcEvents";
 import { STATIC_DIR } from "shared/paths";
+import { hasStaticTitleTokens } from "shared/staticTitleFormat";
 import { isTruthy } from "shared/utils/guards";
 import { once } from "shared/utils/once";
 import type { SettingsStore } from "shared/utils/SettingsStore";
@@ -47,9 +48,6 @@ import { VENCORD_DIR } from "./vencordDir";
 let isQuitting = false;
 
 let resolvedStaticTitle: string | null = null;
-
-const TITLE_FORMAT_TOKENS = /\{(?:username|display_name|ping|ping_count|channel|server|app_name|serv_online_count|serv_member_count|channel_desc)\}|if\(\w+\)\{/;
-const hasFormatTokens = (s: string) => TITLE_FORMAT_TOKENS.test(s);
 
 ipcMain.handle(IpcEvents.SET_STATIC_TITLE, (_e, title: string) => {
     resolvedStaticTitle = title;
@@ -293,7 +291,7 @@ function initStaticTitle(win: BrowserWindow) {
     const getTitle = () => {
         const custom = Settings.store.customStaticTitle?.trim();
         if (!custom) return "Equibop";
-        if (hasFormatTokens(custom)) return resolvedStaticTitle ?? "Equibop";
+        if (hasStaticTitleTokens(custom)) return resolvedStaticTitle ?? "Equibop";
         return custom;
     };
 
@@ -310,7 +308,7 @@ function initStaticTitle(win: BrowserWindow) {
 
     addSettingsListener("customStaticTitle", () => {
         const newCustom = Settings.store.customStaticTitle?.trim();
-        if (!newCustom || !hasFormatTokens(newCustom)) resolvedStaticTitle = null;
+        if (!newCustom || !hasStaticTitleTokens(newCustom)) resolvedStaticTitle = null;
         if (Settings.store.staticTitle) win.setTitle(getTitle());
     });
 }
@@ -424,7 +422,7 @@ function buildBrowserWindowOptions(): BrowserWindowConstructorOptions {
 
     if (staticTitle) {
         const custom = Settings.store.customStaticTitle?.trim();
-        options.title = custom && !hasFormatTokens(custom) ? custom : "Equibop";
+        options.title = custom && !hasStaticTitleTokens(custom) ? custom : "Equibop";
     }
 
     if (process.platform === "darwin") {

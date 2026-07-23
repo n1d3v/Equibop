@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-import { app, dialog, net } from "electron";
-import { copyFile, mkdir, rm } from "fs/promises";
-import { join } from "path";
+import { app, dialog, nativeImage, net } from "electron";
+import { copyFile, mkdir, rm, writeFile } from "fs/promises";
+import { extname, join } from "path";
 import { IpcEvents } from "shared/IpcEvents";
 import { STATIC_DIR } from "shared/paths";
 import { pathToFileURL } from "url";
@@ -17,6 +17,7 @@ import { mainWin } from "./mainWindow";
 import { Settings } from "./settings";
 import { fileExistsAsync } from "./utils/fileExists";
 import { handle } from "./utils/ipcWrappers";
+import { quantizeTo16BitColor } from "./utils/trayColor";
 
 const CUSTOMIZABLE_ASSETS = [
     "splash",
@@ -28,6 +29,15 @@ const CUSTOMIZABLE_ASSETS = [
     "trayDeafened"
 ] as const;
 export type UserAssetType = (typeof CUSTOMIZABLE_ASSETS)[number];
+
+const TRAY_ASSET_TYPES: UserAssetType[] = [
+    "tray",
+    "trayUnread",
+    "traySpeaking",
+    "trayIdle",
+    "trayMuted",
+    "trayDeafened"
+];
 
 const DEFAULT_ASSETS: Record<UserAssetType, string> = {
     splash: "tray.png",
@@ -59,12 +69,35 @@ export async function resolveAssetPath(asset: UserAssetType) {
     return join(STATIC_DIR, DEFAULT_ASSETS[asset]);
 }
 
+async function writeAssetFile(sourcePath: string, destPath: string) {
+    if (extname(sourcePath).toLowerCase() === ".ico") {
+        const image = nativeImage.createFromPath(sourcePath);
+        if (image.isEmpty()) {
+            throw new Error(`Failed to decode ico file: ${sourcePath}`);
+        }
+        await writeFile(destPath, image.toPNG());
+        return;
+    }
+
+    await copyFile(sourcePath, destPath);
+}
+
 export async function handleVesktopAssetsProtocol(path: string, req: Request) {
     const asset = path.slice(1);
 
     // @ts-expect-error dumb types
     if (!CUSTOMIZABLE_ASSETS.includes(asset)) {
         return new Response(null, { status: 404 });
+    }
+
+    if (TRAY_ASSET_TYPES.includes(asset as UserAssetType) && Settings.store.tray16BitColor) {
+        try {
+            const assetPath = await resolveAssetPath(asset as UserAssetType);
+            const image = quantizeTo16BitColor(nativeImage.createFromPath(assetPath));
+            return new Response(new Uint8Array(image.toPNG()), { headers: { "Content-Type": "image/png" } });
+        } catch (e) {
+            console.error(`Failed to render 16-bit preview for ${asset}:`, e);
+        }
     }
 
     try {
@@ -114,7 +147,7 @@ handle(IpcEvents.CHOOSE_USER_ASSET, async (_event, asset: UserAssetType, value?:
         filters: [
             {
                 name: "Images",
-                extensions: ["png", "jpg", "jpeg", "webp", "gif", "avif", "svg"]
+                extensions: ["png", "jpg", "jpeg", "webp", "gif", "avif", "svg", "ico"]
             }
         ]
     });
@@ -123,11 +156,39 @@ handle(IpcEvents.CHOOSE_USER_ASSET, async (_event, asset: UserAssetType, value?:
 
     try {
         await mkdir(UserAssetFolder, { recursive: true });
-        await copyFile(res.filePaths[0], assetPath);
+        await writeAssetFile(res.filePaths[0], assetPath);
         AppEvents.emit("userAssetChanged", asset);
         return "ok";
     } catch (e) {
         console.error(`Failed to copy user asset ${asset}:`, e);
+        return "failed";
+    }
+});
+
+handle(IpcEvents.CHOOSE_ALL_TRAY_ASSETS, async () => {
+    const res = await dialog.showOpenDialog(mainWin, {
+        properties: ["openFile"],
+        title: "Select an image to use for all tray icon states",
+        defaultPath: app.getPath("pictures"),
+        filters: [
+            {
+                name: "Images",
+                extensions: ["png", "jpg", "jpeg", "webp", "gif", "avif", "svg", "ico"]
+            }
+        ]
+    });
+
+    if (res.canceled || !res.filePaths.length) return "cancelled";
+
+    try {
+        await mkdir(UserAssetFolder, { recursive: true });
+        await Promise.all(
+            TRAY_ASSET_TYPES.map(asset => writeAssetFile(res.filePaths[0], join(UserAssetFolder, asset)))
+        );
+        TRAY_ASSET_TYPES.forEach(asset => AppEvents.emit("userAssetChanged", asset));
+        return "ok";
+    } catch (e) {
+        console.error("Failed to copy tray asset to all variants:", e);
         return "failed";
     }
 });

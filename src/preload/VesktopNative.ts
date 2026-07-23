@@ -70,6 +70,7 @@ export const VesktopNative = {
             invoke<"cancelled" | "invalid" | "ok">(IpcEvents.SELECT_VENCORD_DIR, value),
         chooseUserAsset: (asset: string, value?: null) =>
             invoke<"cancelled" | "invalid" | "ok" | "failed">(IpcEvents.CHOOSE_USER_ASSET, asset, value),
+        chooseAllTrayAssets: () => invoke<"cancelled" | "ok" | "failed">(IpcEvents.CHOOSE_ALL_TRAY_ASSETS),
         selectWindowIcon: () => invoke<"cancelled" | "ok">(IpcEvents.SELECT_WINDOW_ICON)
     },
     settings: {

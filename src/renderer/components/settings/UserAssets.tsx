@@ -6,7 +6,7 @@
 
 import "./UserAssets.css";
 
-import { BaseText, Button, FormSwitch } from "@equicord/types/components";
+import { BaseText, Button, Divider, FormSwitch } from "@equicord/types/components";
 import { Margins, openModal, wordsFromCamel, wordsToTitle } from "@equicord/types/utils";
 import { Modal, showToast, useState } from "@equicord/types/webpack/common";
 import { UserAssetType } from "main/userAssets";
@@ -24,6 +24,15 @@ const CUSTOMIZABLE_ASSETS: UserAssetType[] = [
     "trayDeafened"
 ];
 
+const TRAY_ASSETS: UserAssetType[] = ["tray", "trayUnread", "traySpeaking", "trayIdle", "trayMuted", "trayDeafened"];
+
+type AssetVersions = Record<UserAssetType, number>;
+
+function makeInitialVersions(): AssetVersions {
+    const now = Date.now();
+    return Object.fromEntries(CUSTOMIZABLE_ASSETS.map(asset => [asset, now])) as AssetVersions;
+}
+
 export const UserAssetsButton: SettingsComponent = () => {
     return <Button onClick={() => openAssetsModal()}>Customize App Assets</Button>;
 };
@@ -31,18 +40,62 @@ export const UserAssetsButton: SettingsComponent = () => {
 function openAssetsModal() {
     openModal(props => (
         <Modal {...props} size="md" title="User Assets">
-            <div className="vcd-user-assets">
-                {CUSTOMIZABLE_ASSETS.map(asset => (
-                    <Asset key={asset} asset={asset} />
-                ))}
-            </div>
+            <AssetsModalContent />
         </Modal>
     ));
 }
 
-function Asset({ asset }: { asset: UserAssetType }) {
-    // cache busting
-    const [version, setVersion] = useState(Date.now());
+function AssetsModalContent() {
+    const settings = useSettings();
+    const [versions, setVersions] = useState<AssetVersions>(makeInitialVersions);
+
+    const bumpVersions = (assets: UserAssetType[]) => {
+        const now = Date.now();
+        setVersions(prev => {
+            const next = { ...prev };
+            for (const asset of assets) next[asset] = now;
+            return next;
+        });
+    };
+
+    const onSetAllTrayIcons = async () => {
+        const res = await VesktopNative.fileManager.chooseAllTrayAssets();
+        if (res === "ok") {
+            bumpVersions(TRAY_ASSETS);
+        } else if (res === "failed") {
+            showToast("Something went wrong. Please try again");
+        }
+    };
+
+    return (
+        <div className="vcd-user-assets">
+            <section>
+                <BaseText size="md" weight="medium" tag="h3">
+                    Tray Icons
+                </BaseText>
+                <div className="vcd-user-assets-actions">
+                    <div className="vcd-user-assets-buttons">
+                        <Button onClick={onSetAllTrayIcons}>Set all tray icon states</Button>
+                    </div>
+                    <FormSwitch
+                        title="16-bit tray icon color"
+                        description="Quantizes tray icons down to 16-bit color (65,536 colors), useful for Windows 95 - 2000 setups."
+                        value={settings.tray16BitColor ?? false}
+                        onChange={val => (settings.tray16BitColor = val)}
+                        className={Margins.top16}
+                        hideBorder
+                    />
+                </div>
+            </section>
+            <Divider />
+            {CUSTOMIZABLE_ASSETS.map(asset => (
+                <Asset key={asset} asset={asset} version={versions[asset]} onChanged={() => bumpVersions([asset])} />
+            ))}
+        </div>
+    );
+}
+
+function Asset({ asset, version, onChanged }: { asset: UserAssetType; version: number; onChanged: () => void }) {
     const settings = useSettings();
 
     const isSplash = asset === "splash";
@@ -51,7 +104,7 @@ function Asset({ asset }: { asset: UserAssetType }) {
     const onChooseAsset = (value?: null) => async () => {
         const res = await VesktopNative.fileManager.chooseUserAsset(asset, value);
         if (res === "ok") {
-            setVersion(Date.now());
+            onChanged();
             if (isSplash && value === null) {
                 settings.splashPixelated = false;
             }

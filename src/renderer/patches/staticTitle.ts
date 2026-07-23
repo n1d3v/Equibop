@@ -1,12 +1,7 @@
 import { onceReady } from "@equicord/types/webpack";
 import { ChannelStore, FluxDispatcher, SelectedChannelStore, SelectedGuildStore, UserStore } from "@equicord/types/webpack/common";
 import { Settings } from "renderer/settings";
-
-const FORMAT_PATTERN = /\{(?:username|display_name|ping|ping_count|channel|server|app_name|serv_online_count|serv_member_count|channel_desc)\}|if\(!?\w+\)\{|else\{/;
-
-function hasFormatTokens(s: string) {
-    return FORMAT_PATTERN.test(s);
-}
+import { hasStaticTitleTokens } from "shared/staticTitleFormat";
 
 function parseDiscordTitle(title: string) {
     let ping = "";
@@ -27,7 +22,6 @@ function parseDiscordTitle(title: string) {
     return {
         ping,
         pingCount,
-        appName: parts[0]?.trim() || "Discord",
         channel: parts[1]?.trim() || "",
         server: parts[2]?.trim() || ""
     };
@@ -103,6 +97,34 @@ function applyConditionals(format: string, conditions: Record<string, boolean>):
     return result;
 }
 
+function pad2(n: number): string {
+    return String(n).padStart(2, "0");
+}
+
+function formatClock(date: Date, useUTC: boolean, use12h: boolean): string {
+    const hours = useUTC ? date.getUTCHours() : date.getHours();
+    const mm = pad2(useUTC ? date.getUTCMinutes() : date.getMinutes());
+    const hh = use12h ? String(hours % 12 || 12) : pad2(hours);
+
+    return `${hh}:${mm}`;
+}
+
+function resolveTimeToken(suffix: string, use12h: boolean): string {
+    const now = new Date();
+    if (!suffix) return formatClock(now, false, use12h);
+
+    const match = suffix.match(/^-utc([+-]\d{1,2})?$/);
+    const offset = match?.[1];
+    if (!offset) return formatClock(now, true, use12h);
+
+    return formatClock(new Date(now.getTime() + Number(offset) * 60 * 60_000), true, use12h);
+}
+
+function resolveAmPmToken(caps: boolean): string {
+    const suffix = new Date().getHours() >= 12 ? "pm" : "am";
+    return caps ? suffix.toUpperCase() : suffix;
+}
+
 function getTotalMemberCount(guildId: string | null): string {
     if (!guildId) return "";
     try {
@@ -166,7 +188,7 @@ function resolveTitle(format: string): string {
     const username: string = currentUser?.username ?? "";
     const displayName: string = currentUser?.globalName ?? username;
 
-    const { ping, pingCount, appName, channel, server } = parseDiscordTitle(document.title);
+    const { ping, pingCount, channel, server } = parseDiscordTitle(document.title);
     const guildId = (SelectedGuildStore as any).getGuildId?.() ?? null;
 
     const channelId = (SelectedChannelStore as any).getChannelId?.() ?? null;
@@ -188,26 +210,45 @@ function resolveTitle(format: string): string {
         username,
         display_name: displayName,
         ping,
-        ping_count: String(pingCount),
         channel: channel.replace(/^@/, ""),
         server,
-        app_name: appName,
         serv_online_count: getOnlineMemberCount(guildId),
         serv_member_count: getTotalMemberCount(guildId),
         channel_desc: channelDesc
     };
 
     const withConditionals = applyConditionals(format, conditions);
-    return withConditionals.replace(/\{(\w+)\}/g, (match, key) => tokens[key] ?? match);
+
+    const use12h = withConditionals.includes("{12h");
+    const withTime = withConditionals.replace(/\{time((?:-utc(?:[+-]\d{1,2})?)?)\}/g, (_match, suffix: string) =>
+        resolveTimeToken(suffix, use12h)
+    );
+    const with12h = withTime.replace(/\{12h(-caps)?\}/g, (_match, capsFlag) => resolveAmPmToken(!!capsFlag));
+
+    return with12h.replace(/\{(\w+)\}/g, (match, key) => tokens[key] ?? match);
 }
 
 function pushResolvedTitle() {
     const { customStaticTitle, staticTitle } = Settings.store;
 
     if (!staticTitle || !customStaticTitle?.trim()) return;
-    if (!hasFormatTokens(customStaticTitle)) return;
+    if (!hasStaticTitleTokens(customStaticTitle)) return;
 
     VesktopNative.app.setStaticTitle(resolveTitle(customStaticTitle)).catch(() => {});
+}
+
+let clockInterval: ReturnType<typeof setInterval> | null = null;
+
+function updateClockInterval() {
+    const { customStaticTitle, staticTitle } = Settings.store;
+    const needsClock = !!staticTitle && /\{(?:time|12h)/.test(customStaticTitle ?? "");
+
+    if (needsClock && !clockInterval) {
+        clockInterval = setInterval(pushResolvedTitle, 15_000);
+    } else if (!needsClock && clockInterval) {
+        clearInterval(clockInterval);
+        clockInterval = null;
+    }
 }
 
 onceReady.then(() => {
@@ -222,8 +263,15 @@ onceReady.then(() => {
         new MutationObserver(() => pushResolvedTitle()).observe(titleEl, { childList: true });
     }
 
-    Settings.addChangeListener("customStaticTitle", () => pushResolvedTitle());
-    Settings.addChangeListener("staticTitle", () => pushResolvedTitle());
+    Settings.addChangeListener("customStaticTitle", () => {
+        pushResolvedTitle();
+        updateClockInterval();
+    });
+    Settings.addChangeListener("staticTitle", () => {
+        pushResolvedTitle();
+        updateClockInterval();
+    });
 
     pushResolvedTitle();
+    updateClockInterval();
 });
