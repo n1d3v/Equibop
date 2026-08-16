@@ -80,7 +80,19 @@ handle(IpcEvents.ARRPC_OPEN_SETTINGS, () => {
 handleSync(IpcEvents.GET_PLATFORM_SPOOF_INFO, () => getPlatformSpoofInfo());
 
 handle(IpcEvents.SET_SETTINGS, (_, settings: typeof Settings.store, path?: string) => {
-    Settings.setData(settings, path);
+    if (!path) return Settings.setData(settings, path);
+
+    const pathSegments = path.split(".");
+    const finalKey = pathSegments.pop()!;
+
+    let targetObject: any = Settings.store;
+    let sourceValue: any = settings;
+    for (const pathSegment of pathSegments) {
+        targetObject = targetObject[pathSegment];
+        sourceValue = sourceValue?.[pathSegment];
+    }
+
+    targetObject[finalKey] = sourceValue;
 });
 
 handle(IpcEvents.RELAUNCH, async () => {
