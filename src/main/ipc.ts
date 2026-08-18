@@ -92,7 +92,7 @@ handle(IpcEvents.SET_SETTINGS, (_, settings: typeof Settings.store, path?: strin
         sourceValue = sourceValue?.[pathSegment];
     }
 
-    targetObject[finalKey] = sourceValue;
+    targetObject[finalKey] = sourceValue?.[finalKey];
 });
 
 handle(IpcEvents.RELAUNCH, async () => {
