@@ -10,8 +10,10 @@ import "./userAssets";
 import "./vesktopProtocol";
 
 import { app, BrowserWindow, nativeTheme } from "electron";
+import { rmSync } from "fs";
+import { join } from "path";
 
-import { DATA_DIR } from "./constants";
+import { DATA_DIR, SESSION_DATA_DIR } from "./constants";
 import { createFirstLaunchTour } from "./firstLaunch";
 import { createWindows } from "./mainWindow";
 import { registerMediaPermissionsHandler } from "./mediaPermissions";
@@ -28,7 +30,23 @@ const isLinux = process.platform === "linux";
 
 export let enableHardwareAcceleration = true;
 
+function clearStaleWasmCodeCache() {
+    const { electron } = process.versions;
+    if (State.store.lastElectronVersion === electron) return;
+
+    try {
+        rmSync(join(SESSION_DATA_DIR, "Code Cache", "wasm"), { recursive: true, force: true });
+        console.log(`Electron version changed to ${electron}, cleared WebAssembly code cache`);
+    } catch (err) {
+        console.error("Failed to clear code cache:", err);
+        return;
+    }
+
+    State.store.lastElectronVersion = electron;
+}
+
 function init() {
+    clearStaleWasmCodeCache();
     setAsDefaultProtocolClient("discord");
 
     const { disableSmoothScroll, hardwareAcceleration, hardwareVideoAcceleration } = Settings.store;
@@ -39,14 +57,10 @@ function init() {
     app.commandLine.removeSwitch("enable-features");
     app.commandLine.removeSwitch("disable-features");
 
-    if (hardwareAcceleration === false || process.argv.includes("--disable-gpu")) {
+    if (!hardwareAcceleration || process.argv.includes("--disable-gpu")) {
         enableHardwareAcceleration = false;
         app.disableHardwareAcceleration();
     } else {
-        if (isLinux) {
-            disabledFeatures.add("WaylandWpColorManagerV1");
-        }
-
         if (hardwareVideoAcceleration) {
             enabledFeatures.add("AcceleratedVideoEncoder");
             enabledFeatures.add("AcceleratedVideoDecoder");
@@ -60,13 +74,6 @@ function init() {
 
     if (disableSmoothScroll) {
         app.commandLine.appendSwitch("disable-smooth-scrolling");
-    }
-
-    app.commandLine.appendSwitch("disable-renderer-backgrounding");
-    app.commandLine.appendSwitch("disable-background-timer-throttling");
-    app.commandLine.appendSwitch("disable-backgrounding-occluded-windows");
-    if (process.platform === "win32") {
-        disabledFeatures.add("CalculateNativeWinOcclusion");
     }
 
     if (launchArguments) {
@@ -93,15 +100,20 @@ function init() {
         console.log("Applied launch arguments:", launchArguments);
     }
 
+    // work around chrome 66 disabling autoplay by default
     app.commandLine.appendSwitch("autoplay-policy", "no-user-gesture-required");
 
-    disabledFeatures.add("WinRetrieveSuggestionsOnlyOnDemand");
+    // Prevent Discord from registering as a media service.
     disabledFeatures.add("HardwareMediaKeyHandling");
     disabledFeatures.add("MediaSessionService");
 
     if (isLinux) {
-        app.commandLine.appendSwitch("enable-speech-dispatcher");
         app.commandLine.appendSwitch("log-level", "3");
+
+        // This is needed to fix washed out colours - https://github.com/electron/electron/issues/49566
+        // Supposed to be fixed already according to comments there, but it's just not lol, I can repro on Electron 43.0.0
+        // when moving the window from my main monitor (HDR - not sure if this is relevant lol) to second monitor (SDR) and back
+        disabledFeatures.add("WaylandWpColorManagerV1");
     }
 
     disabledFeatures.forEach(feat => enabledFeatures.delete(feat));

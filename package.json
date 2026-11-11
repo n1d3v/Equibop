@@ -1,7 +1,7 @@
 {
     "name": "equibop",
     "desktopName": "equibop",
-    "version": "3.2.2",
+    "version": "3.3.2",
     "private": true,
     "description": "Equibop is a custom Discord desktop app",
     "keywords": [],
@@ -30,42 +30,42 @@
         "postinstall": "bun updateArrpcDB && bun compileArrpc"
     },
     "dependencies": {
-        "@types/ws": "^8.18.1",
-        "@typescript-eslint/eslint-plugin": "^8.65.0",
-        "@typescript-eslint/parser": "^8.65.0",
+        "@types/ws": "^8.18.2",
+        "@typescript-eslint/eslint-plugin": "^8.72.0",
+        "@typescript-eslint/parser": "^8.72.0",
         "arrpc-bun": "^1.4.0",
         "electron-updater": "^6.8.9",
         "tsutils": "^3.21.0",
-        "ws": "^8.21.1"
+        "ws": "^8.22.0"
     },
     "optionalDependencies": {
-        "@vencord/venmic": "^6.1.0"
+        "@vencord/venmic": "^7.2.3"
     },
     "devDependencies": {
         "@equicord/types": "^1.14.15",
         "@fal-works/esbuild-plugin-global-externals": "^2.1.2",
         "@stylistic/eslint-plugin": "^5.10.0",
-        "@types/node": "^26.1.1",
+        "@types/node": "^26.6.5",
         "@types/react": "19.2.9",
         "dotenv": "^17.4.2",
-        "electron": "^43.2.0",
-        "electron-builder": "^26.15.3",
-        "esbuild": "^0.28.1",
-        "eslint": "^10.7.0",
+        "electron": "^44.9.3",
+        "electron-builder": "^26.18.0",
+        "esbuild": "^0.28.2",
+        "eslint": "^10.13.0",
         "eslint-import-resolver-alias": "^1.1.2",
         "eslint-plugin-path-alias": "^2.1.0",
-        "eslint-plugin-prettier": "^5.5.6",
+        "eslint-plugin-prettier": "^5.5.7",
         "eslint-plugin-react": "^7.37.5",
         "eslint-plugin-simple-header": "^1.2.2",
-        "eslint-plugin-simple-import-sort": "^13.0.0",
+        "eslint-plugin-simple-import-sort": "^14.0.0",
         "eslint-plugin-unused-imports": "^4.4.1",
         "libvesktop": "file:packages/libvesktop",
-        "prettier": "^3.9.6",
+        "prettier": "^3.9.10",
         "source-map-support": "^0.5.21",
-        "tsx": "^4.23.1",
-        "type-fest": "^5.8.0",
+        "tsx": "^4.23.15",
+        "type-fest": "^5.10.0",
         "typescript": "^6.0.3",
-        "typescript-eslint": "^8.65.0",
+        "typescript-eslint": "^8.72.0",
         "xml-formatter": "^3.7.0"
     },
     "engines": {
@@ -91,6 +91,10 @@
         },
         "beforePack": "scripts/build/beforePack.mjs",
         "afterPack": "scripts/build/afterPack.mjs",
+        "afterSign": "scripts/build/afterSign.mjs",
+        "toolsets": {
+            "appimage": "1.0.3"
+        },
         "linux": {
             "icon": "build/icon.svg",
             "category": "Network",
@@ -177,6 +181,7 @@
             ]
         },
         "nsis": {
+            "artifactName": "${productName}-Setup-${version}.${ext}",
             "include": "build/installer.nsh",
             "oneClick": false
         },

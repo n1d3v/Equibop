@@ -14,9 +14,9 @@ import { pathToFileURL } from "url";
 import { DATA_DIR } from "./constants";
 import { Settings } from "./settings";
 import { fileExistsAsync } from "./utils/fileExists";
+import { loadView } from "./vesktopStatic";
 
 export let splash: BrowserWindow | undefined;
-import { loadView } from "./vesktopStatic";
 
 const totalTasks = 9;
 let doneTasks = 0;
@@ -59,9 +59,11 @@ async function readCustomSplashSettings(htmlPath: string): Promise<CustomSplashS
 }
 
 export async function createSplashWindow(startMinimized = false) {
-    const { customSplashHtml } = Settings.store;
-    const hasCustomSplashHtml = !!customSplashHtml && (await fileExistsAsync(customSplashHtml));
-    const customSplashSettings = hasCustomSplashHtml ? await readCustomSplashSettings(customSplashHtml!) : {};
+    const { customSplashHtml, splashBackground, splashColor, splashTheming, splashProgress, splashPixelated } =
+        Settings.store;
+    const customSplashPath =
+        customSplashHtml && (await fileExistsAsync(customSplashHtml)) ? customSplashHtml : undefined;
+    const customSplashSettings = customSplashPath ? await readCustomSplashSettings(customSplashPath) : {};
 
     splash = new BrowserWindow({
         ...SplashProps,
@@ -80,12 +82,15 @@ export async function createSplashWindow(startMinimized = false) {
 
     splash.webContents.setMaxListeners(15);
 
-    const { splashBackground, splashColor, splashTheming, splashProgress, splashPixelated } = Settings.store;
+    splash.on("closed", () => {
+        splashReady = false;
+        pendingSplashMessages.length = 0;
+    });
 
     let usingCustomSplash = false;
-    if (hasCustomSplashHtml) {
+    if (customSplashPath) {
         try {
-            await splash.loadURL(pathToFileURL(customSplashHtml!).href);
+            await splash.loadURL(pathToFileURL(customSplashPath).href);
             usingCustomSplash = true;
         } catch (e) {
             console.error("Failed to load custom splash screen HTML, falling back to default:", e);
@@ -93,14 +98,19 @@ export async function createSplashWindow(startMinimized = false) {
     }
 
     if (!usingCustomSplash) {
-        loadView(splash, "splash.html");
+        try {
+            await loadView(splash, "splash.html");
+        } catch (e) {
+            console.error("Failed to load the default splash screen:", e);
+            return splash;
+        }
 
         const isDark = nativeTheme.shouldUseDarkColors;
         const systemBg = isDark ? "hsl(223 6.7% 20.6%)" : "white";
         const systemFg = isDark ? "white" : "black";
         const systemFgSemiTrans = isDark ? "rgb(255 255 255 / 0.2)" : "rgb(0 0 0 / 0.2)";
 
-        if (splashTheming !== false) {
+        if (splashTheming) {
             const fg = splashColor || systemFg;
             const bg = splashBackground || systemBg;
             const fgSemiTrans = splashColor
@@ -120,8 +130,7 @@ export async function createSplashWindow(startMinimized = false) {
             splash.webContents.insertCSS(`img { image-rendering: pixelated; }`);
         }
 
-        const customSplashPath = join(DATA_DIR, "userAssets", "splash");
-        const hasCustomSplash = await fileExistsAsync(customSplashPath);
+        const hasCustomSplash = await fileExistsAsync(join(DATA_DIR, "userAssets", "splash"));
 
         if (!hasCustomSplash) {
             splash.webContents.insertCSS(`
@@ -141,20 +150,13 @@ export async function createSplashWindow(startMinimized = false) {
         sendToSplash("set-splash-progress-visible", false);
     }
 
-    splash.webContents.once("did-finish-load", () => {
-        if (!splash || splash.isDestroyed()) return;
+    if (!splash.isDestroyed()) {
         splashReady = true;
         for (const [channel, payload] of pendingSplashMessages) {
-            if (!splash || splash.isDestroyed()) return;
             splash.webContents.send(channel, payload);
         }
         pendingSplashMessages.length = 0;
-    });
-
-    splash.on("closed", () => {
-        splashReady = false;
-        pendingSplashMessages.length = 0;
-    });
+    }
 
     return splash;
 }

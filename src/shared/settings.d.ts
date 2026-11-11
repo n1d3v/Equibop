@@ -7,46 +7,48 @@
 import type { Rectangle } from "electron";
 
 export interface Settings {
-    discordBranch?: "stable" | "canary" | "ptb";
-    transparencyOption?: "none" | "mica" | "tabbed" | "acrylic";
-    webRTCIPHandlingPolicy?:
+    discordBranch: "stable" | "canary" | "ptb";
+    transparencyOption: "none" | "mica" | "tabbed" | "acrylic";
+    webRTCIPHandlingPolicy:
         | "default"
         | "default_public_interface_only"
         | "default_public_and_private_interfaces"
         | "disable_non_proxied_udp";
-    tray?: boolean;
-    minimizeToTray?: boolean;
-    autoStartMinimized?: boolean;
-    middleClickAutoscroll?: boolean;
-    openLinksWithElectron?: boolean;
-    staticTitle?: boolean;
+    tray: boolean;
+    minimizeToTray: boolean;
+    autoStartMinimized: boolean;
+    middleClickAutoscroll: boolean;
+    openLinksWithElectron: boolean;
+    staticTitle: boolean;
     customStaticTitle?: string;
     customWindowIcon?: string;
-    enableMenu?: boolean;
-    disableSmoothScroll?: boolean;
-    hardwareAcceleration?: boolean;
-    hardwareVideoAcceleration?: boolean;
-    arRPC?: boolean;
-    arRPCDisabled?: boolean;
-    arRPCDebug?: boolean;
-    arRPCProcessScanning?: boolean;
-    arRPCWebSocketAutoReconnect?: boolean;
+    enableMenu: boolean;
+    enableShadow: boolean;
+    enableRoundedCorners: boolean;
+    disableSmoothScroll: boolean;
+    hardwareAcceleration: boolean;
+    hardwareVideoAcceleration: boolean;
+    arRPC: boolean;
+    arRPCDisabled: boolean;
+    arRPCDebug: boolean;
+    arRPCProcessScanning: boolean;
+    arRPCWebSocketAutoReconnect: boolean;
     arRPCWebSocketCustomHost?: string;
     arRPCWebSocketCustomPort?: number;
-    appBadge?: boolean;
-    badgeOnlyForMentions?: boolean;
-    enableTaskbarFlashing?: boolean;
-    disableMinSize?: boolean;
-    clickTrayToShowHide?: boolean;
+    appBadge: boolean;
+    badgeOnlyForMentions: boolean;
+    enableTaskbarFlashing: boolean;
+    disableMinSize: boolean;
+    clickTrayToShowHide: boolean;
     tray16BitColor?: boolean;
-    customTitleBar?: boolean;
+    nativeTitleBar: boolean;
 
-    enableSplashScreen?: boolean;
-    splashTheming?: boolean;
+    enableSplashScreen: boolean;
+    splashTheming: boolean;
+    splashPixelated: boolean;
     splashColor?: string;
     splashBackground?: string;
-    splashProgress?: boolean;
-    splashPixelated?: boolean;
+    splashProgress: boolean;
     customSplashHtml?: string;
 
     spellCheckLanguages?: string[];
@@ -61,6 +63,7 @@ export interface Settings {
         ignoreDevices?: boolean;
         ignoreInputMedia?: boolean;
 
+        mute?: boolean;
         onlySpeakers?: boolean;
         onlyDefaultSpeakers?: boolean;
     };
@@ -79,6 +82,8 @@ export interface State {
     equicordDir?: string;
 
     launchArguments?: string;
+
+    lastElectronVersion?: string;
 
     updater?: {
         ignoredVersion?: string;
