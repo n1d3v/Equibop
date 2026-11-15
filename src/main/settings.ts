@@ -7,6 +7,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from "fs";
 import { dirname, join } from "path";
 import { DefaultEquibopSettings } from "shared/defaultSettings";
+import { getBalloonPicture } from "shared/notifications";
 import type { Settings as TSettings, State as TState } from "shared/settings";
 import { SettingsStore } from "shared/utils/SettingsStore";
 
@@ -21,6 +22,7 @@ function migrateSettings(settings: any) {
         settings.nativeTitleBar ??= !settings.customTitleBar;
         delete settings.customTitleBar;
     }
+    settings.notificationBalloonPicture = getBalloonPicture(settings);
 }
 
 function loadSettings<T extends object = any>(file: string, name: string, defaults?: T) {

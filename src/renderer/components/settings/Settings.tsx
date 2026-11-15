@@ -10,7 +10,7 @@ import { classNameFactory } from "@equicord/types/api/Styles";
 import { BaseText, Divider, ErrorBoundary } from "@equicord/types/components";
 import { ComponentType } from "react";
 import { getValueAndOnChange, Settings, useSettings } from "renderer/settings";
-import { isMac } from "renderer/utils";
+import { isMac, isWindows } from "renderer/utils";
 
 import { ArRPCSettingsButton } from "./ArRPCSettings";
 import { CustomSettingsSection } from "./CustomSettings";
@@ -18,6 +18,7 @@ import { AutoStartToggle } from "./AutoStartToggle";
 import { DeveloperOptionsButton } from "./DeveloperOptions";
 import { DiscordBranchPicker } from "./DiscordBranchPicker";
 import { NotificationBadgeToggle } from "./NotificationBadgeToggle";
+import { NotificationSettings } from "./NotificationSettings";
 import { OutdatedVesktopWarning } from "./OutdatedVesktopWarning";
 import { Updater } from "./Updater";
 import { UserAssetsButton } from "./UserAssets";
@@ -135,6 +136,7 @@ const SettingsOptions: Record<string, Array<BooleanSetting | SettingsComponent>>
     ],
     Notifications: [
         NotificationBadgeToggle,
+        ...(isWindows ? [NotificationSettings] : []),
         {
             key: "enableTaskbarFlashing",
             title: "Enable Taskbar Flashing",

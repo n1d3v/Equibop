@@ -37,6 +37,9 @@ export interface Settings {
     arRPCWebSocketCustomPort?: number;
     appBadge: boolean;
     badgeOnlyForMentions: boolean;
+    notificationType?: "balloon" | "custom";
+    notificationBalloonPicture: "profile-picture" | "app-icon" | "hidden";
+    customNotificationHtml?: string;
     enableTaskbarFlashing: boolean;
     disableMinSize: boolean;
     clickTrayToShowHide: boolean;

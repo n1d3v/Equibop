@@ -39,7 +39,8 @@
         "ws": "^8.22.0"
     },
     "optionalDependencies": {
-        "@vencord/venmic": "^7.2.3"
+        "@vencord/venmic": "^7.2.3",
+        "koffi": "^3.3.7"
     },
     "devDependencies": {
         "@equicord/types": "^1.14.15",
@@ -187,6 +188,19 @@
         },
         "win": {
             "icon": "build/icon.ico",
+            "files": [
+                {
+                    "from": "node_modules/koffi",
+                    "to": "node_modules/koffi",
+                    "filter": ["package.json", "LICENSE*", "index.cjs", "src/koffi/index.cjs", "src/koffi/src/static.cjs"]
+                },
+                {
+                    "from": "node_modules/@koromix/koffi-win32-${arch}",
+                    "to": "node_modules/@koromix/koffi-win32-${arch}",
+                    "filter": ["package.json", "index.js", "README.md", "**/*.node"]
+                }
+            ],
+            "asarUnpack": ["node_modules/@koromix/koffi-win32-*/**/*.node"],
             "target": [
                 {
                     "target": "nsis",

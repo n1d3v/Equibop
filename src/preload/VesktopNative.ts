@@ -7,6 +7,7 @@
 import type { Node } from "@vencord/venmic";
 import { ipcRenderer } from "electron/renderer";
 import type { IpcMessage, IpcResponse } from "main/ipcCommands";
+import type { NotificationAction, NotificationData } from "shared/notifications";
 import type { Settings } from "shared/settings";
 
 import { IpcEvents } from "../shared/IpcEvents";
@@ -72,11 +73,19 @@ export const VesktopNative = {
             invoke<"cancelled" | "invalid" | "ok" | "failed">(IpcEvents.CHOOSE_USER_ASSET, asset, value),
         chooseAllTrayAssets: () => invoke<"cancelled" | "ok" | "failed">(IpcEvents.CHOOSE_ALL_TRAY_ASSETS),
         selectWindowIcon: () => invoke<"cancelled" | "ok">(IpcEvents.SELECT_WINDOW_ICON),
-        selectSplashHtml: () => invoke<"cancelled" | "ok">(IpcEvents.SELECT_SPLASH_HTML)
+        selectSplashHtml: () => invoke<"cancelled" | "ok">(IpcEvents.SELECT_SPLASH_HTML),
+        selectNotificationHtml: () => invoke<string | undefined>(IpcEvents.SELECT_NOTIFICATION_HTML)
     },
     settings: {
         get: () => sendSync<Settings>(IpcEvents.GET_SETTINGS),
         set: (settings: Settings, path?: string) => invoke<void>(IpcEvents.SET_SETTINGS, settings, path)
+    },
+    notifications: {
+        show: (data: NotificationData) => invoke<boolean>(IpcEvents.SHOW_NOTIFICATION, data),
+        close: (id: number) => invoke<void>(IpcEvents.CLOSE_NOTIFICATION, id),
+        onAction: (cb: (id: number, action: NotificationAction) => void) => {
+            ipcRenderer.on(IpcEvents.NOTIFICATION_ACTION, (_event, id, action) => cb(id, action));
+        }
     },
     spellcheck: {
         getAvailableLanguages: () => sendSync<string[]>(IpcEvents.SPELLCHECK_GET_AVAILABLE_LANGUAGES),

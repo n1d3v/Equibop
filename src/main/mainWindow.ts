@@ -35,6 +35,7 @@ import { AppEvents } from "./events";
 import { spoofGnu } from "./gnuSpoofing";
 import { sendRendererCommand } from "./ipcCommands";
 import { initKeybinds } from "./keybinds";
+import { initNotifications } from "./notifications";
 import { Settings, State, VencordSettings } from "./settings";
 import { addSplashLog, createSplashWindow, updateSplashMessage } from "./splash";
 import { darwinURL } from "./startup";
@@ -477,6 +478,7 @@ function createMainWindow() {
 
     const win = (mainWin = new BrowserWindow(buildBrowserWindowOptions()));
 
+    initNotifications(win);
     win.webContents.setMaxListeners(15);
     win.setMenuBarVisibility(false);
 

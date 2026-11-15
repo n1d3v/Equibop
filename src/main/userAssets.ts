@@ -122,19 +122,28 @@ handle(IpcEvents.SELECT_WINDOW_ICON, async () => {
     return "ok";
 });
 
-handle(IpcEvents.SELECT_SPLASH_HTML, async () => {
+async function selectCustomHtml(title: string) {
     const res = await dialog.showOpenDialog(mainWin, {
         properties: ["openFile"],
-        title: "Select a custom splash screen HTML file",
+        title,
         defaultPath: app.getPath("documents"),
         filters: [{ name: "HTML Files", extensions: ["html", "htm"] }]
     });
 
-    if (res.canceled || !res.filePaths.length) return "cancelled";
+    if (!res.canceled) return res.filePaths[0];
+}
 
-    Settings.store.customSplashHtml = res.filePaths[0];
+handle(IpcEvents.SELECT_SPLASH_HTML, async () => {
+    const path = await selectCustomHtml("Select a custom splash screen HTML file");
+    if (!path) return "cancelled";
+
+    Settings.store.customSplashHtml = path;
     return "ok";
 });
+
+handle(IpcEvents.SELECT_NOTIFICATION_HTML, () =>
+    selectCustomHtml("Select a custom notification HTML file")
+);
 
 handle(IpcEvents.CHOOSE_USER_ASSET, async (_event, asset: UserAssetType, value?: null) => {
     if (!CUSTOMIZABLE_ASSETS.includes(asset)) {

@@ -36,5 +36,6 @@ export const DefaultEquibopSettings: Settings = {
     webRTCIPHandlingPolicy: "default",
     appBadge: true,
     badgeOnlyForMentions: false,
+    notificationBalloonPicture: "profile-picture",
     transparencyOption: "none"
 };

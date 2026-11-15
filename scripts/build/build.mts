@@ -32,7 +32,7 @@ const NodeCommonOpts: BuildOptions = {
     ...CommonOpts,
     format: "cjs",
     platform: "node",
-    external: ["electron", "original-fs"],
+    external: ["electron", "koffi", "original-fs"],
     target: ["esnext"],
     loader: {
         ".node": "file"
