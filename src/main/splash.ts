@@ -4,12 +4,13 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-import { BrowserWindow, nativeTheme } from "electron";
 import { readFile } from "fs/promises";
 import { join } from "path";
+import { pathToFileURL } from "url";
+
+import { BrowserWindow } from "electron";
 import { SplashProps } from "shared/browserWinProperties";
 import { STATIC_DIR } from "shared/paths";
-import { pathToFileURL } from "url";
 
 import { DATA_DIR } from "./constants";
 import { Settings } from "./settings";
@@ -99,35 +100,16 @@ export async function createSplashWindow(startMinimized = false) {
 
     if (!usingCustomSplash) {
         try {
-            await loadView(splash, "splash.html");
+            const params = new URLSearchParams();
+            if (splashTheming) {
+                if (splashColor) params.set("fg", splashColor);
+                if (splashBackground) params.set("bg", splashBackground);
+            }
+            if (splashPixelated) params.set("pixelated", "");
+            await loadView(splash, "splash.html", params);
         } catch (e) {
             console.error("Failed to load the default splash screen:", e);
             return splash;
-        }
-
-        const isDark = nativeTheme.shouldUseDarkColors;
-        const systemBg = isDark ? "hsl(223 6.7% 20.6%)" : "white";
-        const systemFg = isDark ? "white" : "black";
-        const systemFgSemiTrans = isDark ? "rgb(255 255 255 / 0.2)" : "rgb(0 0 0 / 0.2)";
-
-        if (splashTheming) {
-            const fg = splashColor || systemFg;
-            const bg = splashBackground || systemBg;
-            const fgSemiTrans = splashColor
-                ? splashColor.replace("rgb(", "rgba(").replace(")", ", 0.2)")
-                : systemFgSemiTrans;
-
-            splash.webContents.insertCSS(
-                `body { --bg: ${bg} !important; --fg: ${fg} !important; --fg-semi-trans: ${fgSemiTrans} !important; }`
-            );
-        } else {
-            splash.webContents.insertCSS(
-                `body { --bg: ${systemBg} !important; --fg: ${systemFg} !important; --fg-semi-trans: ${systemFgSemiTrans} !important; }`
-            );
-        }
-
-        if (splashPixelated) {
-            splash.webContents.insertCSS(`img { image-rendering: pixelated; }`);
         }
 
         const hasCustomSplash = await fileExistsAsync(join(DATA_DIR, "userAssets", "splash"));

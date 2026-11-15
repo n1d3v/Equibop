@@ -4,12 +4,13 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-import { app, dialog, nativeImage, net } from "electron";
 import { copyFile, mkdir, rm, writeFile } from "fs/promises";
 import { extname, join } from "path";
+import { pathToFileURL } from "url";
+
+import { app, dialog, nativeImage, net } from "electron";
 import { IpcEvents } from "shared/IpcEvents";
 import { STATIC_DIR } from "shared/paths";
-import { pathToFileURL } from "url";
 
 import { DATA_DIR } from "./constants";
 import { AppEvents } from "./events";
@@ -82,7 +83,7 @@ async function writeAssetFile(sourcePath: string, destPath: string) {
     await copyFile(sourcePath, destPath);
 }
 
-export async function handleVesktopAssetsProtocol(path: string, req: Request) {
+export async function handleVesktopAssetsProtocol(path: string) {
     const asset = path.slice(1);
 
     // @ts-expect-error dumb types

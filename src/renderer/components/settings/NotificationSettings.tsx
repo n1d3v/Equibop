@@ -1,4 +1,4 @@
-import { BaseText, Button } from "@equicord/types/components";
+import { Text, Button } from "@equicord/types/components";
 import { Margins } from "@equicord/types/utils";
 import { Select, showToast } from "@equicord/types/webpack/common";
 import { getBalloonPicture, getNotificationType } from "shared/notifications";
@@ -12,9 +12,9 @@ export const NotificationSettings: SettingsComponent = ({ settings }) => {
 
     return (
         <SimpleErrorBoundary>
-            <BaseText size="md" weight="medium" tag="h3" className={Margins.bottom8}>
+            <Text size="md" weight="medium" tag="h3" className={Margins.bottom8}>
                 Notification Type
-            </BaseText>
+            </Text>
             <Select
                 options={[
                     { label: "Windows Balloon", value: "balloon" },
@@ -28,9 +28,9 @@ export const NotificationSettings: SettingsComponent = ({ settings }) => {
             <div className={Margins.top16}>
                 {notificationType === "balloon" ? (
                     <>
-                        <BaseText size="md" weight="medium" tag="h3" className={Margins.bottom8}>
+                        <Text size="md" weight="medium" tag="h3" className={Margins.bottom8}>
                             Balloon Picture
-                        </BaseText>
+                        </Text>
                         <Select
                             options={[
                                 { label: "Profile Picture", value: "profile-picture" },
@@ -57,22 +57,22 @@ const NotificationTemplateSettings: SettingsComponent = ({ settings }) => {
         if (!path) return;
 
         settings.customNotificationHtml = path;
-        showToast("Custom notification template updated.");
+        showToast({ text: "Custom notification template updated." });
     };
 
     return (
         <div>
-            <BaseText size="md" weight="medium" tag="h3" className={Margins.bottom8}>
+            <Text size="md" weight="medium" tag="h3" className={Margins.bottom8}>
                 Custom Notification HTML
-            </BaseText>
-            <BaseText size="sm" style={{ color: "var(--text-muted)", marginBottom: "8px" }}>
+            </Text>
+            <Text size="sm" style={{ color: "var(--text-muted)", marginBottom: "8px" }}>
                 Choose a local HTML template for desktop notifications. Windows balloons are used if the template is
                 missing or fails to load.
-            </BaseText>
+            </Text>
             {settings.customNotificationHtml && (
-                <BaseText size="sm" style={{ color: "var(--text-muted)", marginBottom: "8px", wordBreak: "break-all" }}>
+                <Text size="sm" style={{ color: "var(--text-muted)", marginBottom: "8px", wordBreak: "break-all" }}>
                     Current: {settings.customNotificationHtml}
-                </BaseText>
+                </Text>
             )}
             <div style={{ display: "flex", gap: "8px" }}>
                 <Button onClick={selectTemplate}>Choose HTML File</Button>

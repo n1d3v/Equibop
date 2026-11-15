@@ -1,4 +1,4 @@
-import { BaseText, Button } from "@equicord/types/components";
+import { Text, Button } from "@equicord/types/components";
 import { Margins } from "@equicord/types/utils";
 import { showToast, useState } from "@equicord/types/webpack/common";
 import { useSettings } from "renderer/settings";
@@ -21,37 +21,37 @@ export const CustomSettingsSection: SettingsComponent = () => {
     const onSelectIcon = async () => {
         const res = await VesktopNative.fileManager.selectWindowIcon();
         if (res === "ok") {
-            showToast("Window icon updated. It will apply immediately.");
+            showToast({ text: "Window icon updated. It will apply immediately." });
         }
     };
 
     const onClearIcon = () => {
         settings.customWindowIcon = undefined;
-        showToast("Window icon reset to default.");
+        showToast({ text: "Window icon reset to default." });
     };
 
     const onSelectSplashHtml = async () => {
         const res = await VesktopNative.fileManager.selectSplashHtml();
         if (res === "ok") {
-            showToast("Custom splash screen updated. It will apply next launch.");
+            showToast({ text: "Custom splash screen updated. It will apply next launch." });
         }
     };
 
     const onClearSplashHtml = () => {
         settings.customSplashHtml = undefined;
-        showToast("Splash screen reset to default.");
+        showToast({ text: "Splash screen reset to default." });
     };
 
     return (
         <div className={cl("custom-settings")}>
             <div style={{ marginBottom: "16px" }}>
-                <BaseText size="md" weight="medium" tag="h3" className={Margins.bottom8}>
+                <Text size="md" weight="medium" tag="h3" className={Margins.bottom8}>
                     Custom Static Title
-                </BaseText>
-                <BaseText size="sm" style={{ color: "var(--text-muted)", marginBottom: "8px" }}>
+                </Text>
+                <Text size="sm" style={{ color: "var(--text-muted)", marginBottom: "8px" }}>
                     Override the window title shown when "Static Title" is enabled. Leave blank to use "Equibop".
                     Supports custom formatting tokens, look at FORMATTING_DOC.md in the forked repository to learn how to use it.
-                </BaseText>
+                </Text>
                 <div style={!settings.staticTitle ? { opacity: 0.5, pointerEvents: "none" } : undefined}>
                     <input
                         type="text"
@@ -76,23 +76,23 @@ export const CustomSettingsSection: SettingsComponent = () => {
                     />
                 </div>
                 {!settings.staticTitle && (
-                    <BaseText size="sm" style={{ color: "var(--text-muted)", marginTop: "4px" }}>
+                    <Text size="sm" style={{ color: "var(--text-muted)", marginTop: "4px" }}>
                         Enable "Static Title" above to use this option.
-                    </BaseText>
+                    </Text>
                 )}
             </div>
 
             <div>
-                <BaseText size="md" weight="medium" tag="h3" className={Margins.bottom8}>
+                <Text size="md" weight="medium" tag="h3" className={Margins.bottom8}>
                     Custom Window Icon
-                </BaseText>
-                <BaseText size="sm" style={{ color: "var(--text-muted)", marginBottom: "8px" }}>
+                </Text>
+                <Text size="sm" style={{ color: "var(--text-muted)", marginBottom: "8px" }}>
                     Replace the taskbar and window icon. Supports .ico, .png, .jpg files.
-                </BaseText>
+                </Text>
                 {settings.customWindowIcon && (
-                    <BaseText size="sm" style={{ color: "var(--text-muted)", marginBottom: "8px", wordBreak: "break-all" }}>
+                    <Text size="sm" style={{ color: "var(--text-muted)", marginBottom: "8px", wordBreak: "break-all" }}>
                         Current: {settings.customWindowIcon}
-                    </BaseText>
+                    </Text>
                 )}
                 <div style={{ display: "flex", gap: "8px" }}>
                     <Button onClick={onSelectIcon}>Choose Icon</Button>
@@ -105,21 +105,21 @@ export const CustomSettingsSection: SettingsComponent = () => {
             </div>
 
             <div style={{ marginTop: "16px" }}>
-                <BaseText size="md" weight="medium" tag="h3" className={Margins.bottom8}>
+                <Text size="md" weight="medium" tag="h3" className={Margins.bottom8}>
                     Custom Splash Screen
-                </BaseText>
-                <BaseText size="sm" style={{ color: "var(--text-muted)", marginBottom: "8px" }}>
+                </Text>
+                <Text size="sm" style={{ color: "var(--text-muted)", marginBottom: "8px" }}>
                     Replace the splash screen shown while Equibop is loading with your own HTML file.
                     The file can include its own independent CSS and JavaScript as you see fit.
                     Look at SPLASH_DOC.md in the forked repository to learn how to create for it.
-                </BaseText>
+                </Text>
                 {settings.customSplashHtml && (
-                    <BaseText
+                    <Text
                         size="sm"
                         style={{ color: "var(--text-muted)", marginBottom: "8px", wordBreak: "break-all" }}
                     >
                         Current: {settings.customSplashHtml}
-                    </BaseText>
+                    </Text>
                 )}
                 <div style={{ display: "flex", gap: "8px" }}>
                     <Button onClick={onSelectSplashHtml}>Choose HTML File</Button>

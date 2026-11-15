@@ -5,10 +5,9 @@
  */
 
 import "./UserAssets.css";
-
-import { BaseText, Button, Divider, FormSwitch } from "@equicord/types/components";
-import { Margins, openModal, wordsFromCamel, wordsToTitle } from "@equicord/types/utils";
-import { Modal, showToast, useState } from "@equicord/types/webpack/common";
+import { Button, Divider, FormSwitch, Text } from "@equicord/types/components";
+import { Margins, wordsFromCamel, wordsToTitle } from "@equicord/types/utils";
+import { Modal, openModal, showToast, useState } from "@equicord/types/webpack/common";
 import { UserAssetType } from "main/userAssets";
 import { useSettings } from "renderer/settings";
 
@@ -63,16 +62,16 @@ function AssetsModalContent() {
         if (res === "ok") {
             bumpVersions(TRAY_ASSETS);
         } else if (res === "failed") {
-            showToast("Something went wrong. Please try again");
+            showToast({ text: "Something went wrong. Please try again", variant: "critical" });
         }
     };
 
     return (
         <div className="vcd-user-assets">
             <section>
-                <BaseText size="md" weight="medium" tag="h3">
+                <Text size="md" weight="medium" tag="h3">
                     Tray icons
-                </BaseText>
+                </Text>
                 <div className="vcd-user-assets-actions">
                     <div className="vcd-user-assets-buttons">
                         <Button onClick={onSetAllTrayIcons}>Set all tray icon states</Button>
@@ -109,15 +108,15 @@ function Asset({ asset, version, onChanged }: { asset: UserAssetType; version: n
                 settings.splashPixelated = false;
             }
         } else if (res === "failed") {
-            showToast("Something went wrong. Please try again");
+            showToast({ text: "Something went wrong. Please try again", variant: "critical" });
         }
     };
 
     return (
         <section>
-            <BaseText size="md" weight="medium" tag="h3">
+            <Text size="md" weight="medium" tag="h3">
                 {wordsToTitle(wordsFromCamel(asset))}
-            </BaseText>
+            </Text>
             <div className="vcd-user-assets-asset">
                 <img
                     className="vcd-user-assets-image"
