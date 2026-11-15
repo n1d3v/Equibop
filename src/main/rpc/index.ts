@@ -59,7 +59,7 @@ handle(IpcEvents.RPC_READY, () => {
     if (server) {
         server.closeAll(CloseCode.Normal, "Renderer reloaded");
         gameDetection!.getGames().forEach(game => sendGame(game, true));
-    } else if (!NO_ARRPC && Settings.store.arRPC) {
+    } else if (Settings.store.arRPC) {
         start();
     }
 });
@@ -68,6 +68,6 @@ handle(IpcEvents.RPC_SEND, (_, id: string, json: string) => server?.send(id, jso
 handle(IpcEvents.RPC_CLOSE, (_, id: string, code: number, message?: string) => server?.close(id, code, message));
 
 Settings.addChangeListener("arRPC", enabled => {
-    if (NO_ARRPC || !enabled) stop();
+    if (!enabled) stop();
     else if (rendererReady && !server) start();
 });

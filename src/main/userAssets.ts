@@ -11,6 +11,12 @@ import { pathToFileURL } from "url";
 import { app, dialog, nativeImage, net } from "electron";
 import { IpcEvents } from "shared/IpcEvents";
 import { STATIC_DIR } from "shared/paths";
+import {
+    NOTIFICATION_BADGE_ASSETS,
+    STATUS_BADGES,
+    type TaskbarBadgeAsset,
+    UNREAD_BADGE_ASSET
+} from "shared/taskbarBadges";
 
 import { DATA_DIR } from "./constants";
 import { AppEvents } from "./events";
@@ -20,61 +26,56 @@ import { fileExistsAsync } from "./utils/fileExists";
 import { handle } from "./utils/ipcWrappers";
 import { quantizeTo16BitColor } from "./utils/trayColor";
 
-const CUSTOMIZABLE_ASSETS = [
-    "splash",
-    "tray",
-    "trayUnread",
-    "traySpeaking",
-    "trayIdle",
-    "trayMuted",
-    "trayDeafened"
-] as const;
-export type UserAssetType = (typeof CUSTOMIZABLE_ASSETS)[number];
+const TRAY_ASSET_TYPES = ["tray", "trayUnread", "traySpeaking", "trayIdle", "trayMuted", "trayDeafened"] as const;
 
-const TRAY_ASSET_TYPES: UserAssetType[] = [
-    "tray",
-    "trayUnread",
-    "traySpeaking",
-    "trayIdle",
-    "trayMuted",
-    "trayDeafened"
-];
+const BADGE_ASSETS = new Map<string, string>([
+    ...NOTIFICATION_BADGE_ASSETS.map((asset, index) => [asset, `badges/${index + 1}.ico`] as const),
+    [UNREAD_BADGE_ASSET, "badges/11.ico"],
+    ...Object.entries(STATUS_BADGES).map(([status, { asset }]) => [asset, `badges/${status}.png`] as const)
+]);
 
-const DEFAULT_ASSETS: Record<UserAssetType, string> = {
-    splash: "tray.png",
-    tray:
-        process.platform === "darwin"
-            ? "tray/trayTemplate.png"
-            : process.platform === "win32"
-              ? "icon.ico"
-              : "tray/tray.png",
-    trayUnread: "tray/trayUnread.png",
-    traySpeaking: "tray/speaking.png",
-    trayIdle: "tray/idle.png",
-    trayMuted: "tray/muted.png",
-    trayDeafened: "tray/deafened.png"
-};
+type TrayAssetType = (typeof TRAY_ASSET_TYPES)[number];
+export type UserAssetType = "splash" | TrayAssetType | TaskbarBadgeAsset;
+
+const DEFAULT_ASSETS = new Map<string, string>([
+    ...Object.entries({
+        splash: "tray.png",
+        tray:
+            process.platform === "darwin"
+                ? "tray/trayTemplate.png"
+                : process.platform === "win32"
+                  ? "icon.ico"
+                  : "tray/tray.png",
+        trayUnread: "tray/trayUnread.png",
+        traySpeaking: "tray/speaking.png",
+        trayIdle: "tray/idle.png",
+        trayMuted: "tray/muted.png",
+        trayDeafened: "tray/deafened.png"
+    } satisfies Record<"splash" | TrayAssetType, string>),
+    ...BADGE_ASSETS
+]);
 
 const UserAssetFolder = join(DATA_DIR, "userAssets");
 
-export async function resolveAssetPath(asset: UserAssetType) {
-    if (!CUSTOMIZABLE_ASSETS.includes(asset)) {
+export async function resolveAssetPath(asset: UserAssetType, useCustom = true) {
+    const defaultAsset = DEFAULT_ASSETS.get(asset);
+    if (!defaultAsset) {
         throw new Error(`Invalid asset: ${asset}`);
     }
 
     const assetPath = join(UserAssetFolder, asset);
-    if (await fileExistsAsync(assetPath)) {
+    if (useCustom && (await fileExistsAsync(assetPath))) {
         return assetPath;
     }
 
-    return join(STATIC_DIR, DEFAULT_ASSETS[asset]);
+    return join(STATIC_DIR, defaultAsset);
 }
 
-async function writeAssetFile(sourcePath: string, destPath: string) {
-    if (extname(sourcePath).toLowerCase() === ".ico") {
+async function writeAssetFile(sourcePath: string, destPath: string, isBadge = false) {
+    if (isBadge || extname(sourcePath).toLowerCase() === ".ico") {
         const image = nativeImage.createFromPath(sourcePath);
         if (image.isEmpty()) {
-            throw new Error(`Failed to decode ico file: ${sourcePath}`);
+            throw new Error(`Failed to decode image: ${sourcePath}`);
         }
         await writeFile(destPath, image.toPNG());
         return;
@@ -86,14 +87,14 @@ async function writeAssetFile(sourcePath: string, destPath: string) {
 export async function handleVesktopAssetsProtocol(path: string) {
     const asset = path.slice(1);
 
-    // @ts-expect-error dumb types
-    if (!CUSTOMIZABLE_ASSETS.includes(asset)) {
+    const defaultAsset = DEFAULT_ASSETS.get(asset);
+    if (!defaultAsset) {
         return new Response(null, { status: 404 });
     }
 
-    if (TRAY_ASSET_TYPES.includes(asset as UserAssetType) && Settings.store.tray16BitColor) {
+    if (TRAY_ASSET_TYPES.includes(asset as TrayAssetType) && Settings.store.tray16BitColor) {
         try {
-            const assetPath = await resolveAssetPath(asset as UserAssetType);
+            const assetPath = await resolveAssetPath(asset as TrayAssetType);
             const image = quantizeTo16BitColor(nativeImage.createFromPath(assetPath));
             return new Response(new Uint8Array(image.toPNG()), { headers: { "Content-Type": "image/png" } });
         } catch (e) {
@@ -106,7 +107,7 @@ export async function handleVesktopAssetsProtocol(path: string) {
         if (res.ok) return res;
     } catch {}
 
-    return net.fetch(pathToFileURL(join(STATIC_DIR, DEFAULT_ASSETS[asset])).href);
+    return net.fetch(pathToFileURL(join(STATIC_DIR, defaultAsset)).href);
 }
 
 handle(IpcEvents.SELECT_WINDOW_ICON, async () => {
@@ -142,12 +143,10 @@ handle(IpcEvents.SELECT_SPLASH_HTML, async () => {
     return "ok";
 });
 
-handle(IpcEvents.SELECT_NOTIFICATION_HTML, () =>
-    selectCustomHtml("Select a custom notification HTML file")
-);
+handle(IpcEvents.SELECT_NOTIFICATION_HTML, () => selectCustomHtml("Select a custom notification HTML file"));
 
 handle(IpcEvents.CHOOSE_USER_ASSET, async (_event, asset: UserAssetType, value?: null) => {
-    if (!CUSTOMIZABLE_ASSETS.includes(asset)) {
+    if (!DEFAULT_ASSETS.has(asset)) {
         throw `Invalid asset: ${asset}`;
     }
 
@@ -164,6 +163,7 @@ handle(IpcEvents.CHOOSE_USER_ASSET, async (_event, asset: UserAssetType, value?:
         }
     }
 
+    const isBadge = BADGE_ASSETS.has(asset);
     const res = await dialog.showOpenDialog(mainWin, {
         properties: ["openFile"],
         title: `Select an image to use as ${asset}`,
@@ -171,7 +171,9 @@ handle(IpcEvents.CHOOSE_USER_ASSET, async (_event, asset: UserAssetType, value?:
         filters: [
             {
                 name: "Images",
-                extensions: ["png", "jpg", "jpeg", "webp", "gif", "avif", "svg", "ico"]
+                extensions: isBadge
+                    ? ["png", "jpg", "jpeg", "ico"]
+                    : ["png", "jpg", "jpeg", "webp", "gif", "avif", "svg", "ico"]
             }
         ]
     });
@@ -180,7 +182,7 @@ handle(IpcEvents.CHOOSE_USER_ASSET, async (_event, asset: UserAssetType, value?:
 
     try {
         await mkdir(UserAssetFolder, { recursive: true });
-        await writeAssetFile(res.filePaths[0], assetPath);
+        await writeAssetFile(res.filePaths[0], assetPath, isBadge);
         AppEvents.emit("userAssetChanged", asset);
         return "ok";
     } catch (e) {

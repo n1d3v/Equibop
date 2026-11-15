@@ -34,6 +34,7 @@ export const VesktopNative = {
         getGitHash: () => sendSync<string>(IpcEvents.GET_GIT_HASH),
         isDevBuild: () => IS_DEV,
         setBadgeCount: (count: number) => invoke<void>(IpcEvents.SET_BADGE_COUNT, count),
+        setBadgeStatus: (status: string | null) => invoke<void>(IpcEvents.SET_BADGE_STATUS, status),
         supportsWindowsTransparency: () => sendSync<boolean>(IpcEvents.SUPPORTS_WINDOWS_TRANSPARENCY),
         getEnableHardwareAcceleration: () => sendSync<boolean>(IpcEvents.GET_ENABLE_HARDWARE_ACCELERATION),
         isOutdated: () => invoke<boolean>(IpcEvents.UPDATER_IS_OUTDATED),

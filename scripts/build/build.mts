@@ -13,7 +13,6 @@ import { includeDirPlugin } from "./includeDirPlugin.mts";
 import vencordDep from "./vencordDep.mjs";
 
 const isDev = process.argv.includes("--dev");
-const noArrpc = process.argv.includes("--no-arrpc");
 
 let gitHash: string;
 try {
@@ -40,8 +39,7 @@ const NodeCommonOpts: BuildOptions = {
     },
     define: {
         IS_DEV: JSON.stringify(isDev),
-        EQUIBOP_GIT_HASH: JSON.stringify(gitHash),
-        NO_ARRPC: JSON.stringify(noArrpc)
+        EQUIBOP_GIT_HASH: JSON.stringify(gitHash)
     }
 };
 

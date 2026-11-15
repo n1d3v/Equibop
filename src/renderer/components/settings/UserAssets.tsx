@@ -7,29 +7,43 @@
 import "./UserAssets.css";
 import { Button, Divider, FormSwitch, Text } from "@equicord/types/components";
 import { Margins, wordsFromCamel, wordsToTitle } from "@equicord/types/utils";
-import { Modal, openModal, showToast, useState } from "@equicord/types/webpack/common";
+import { Modal, openModal, Select, showToast, useState } from "@equicord/types/webpack/common";
 import { UserAssetType } from "main/userAssets";
 import { useSettings } from "renderer/settings";
+import { isWindows } from "renderer/utils";
+import {
+    MAX_NOTIFICATION_BADGE_COUNT,
+    NOTIFICATION_BADGE_ASSETS,
+    STATUS_BADGES,
+    UNREAD_BADGE_ASSET
+} from "shared/taskbarBadges";
 
 import { SettingsComponent } from "./Settings";
 
-const CUSTOMIZABLE_ASSETS: UserAssetType[] = [
-    "splash",
-    "tray",
-    "trayUnread",
-    "traySpeaking",
-    "trayIdle",
-    "trayMuted",
-    "trayDeafened"
-];
-
 const TRAY_ASSETS: UserAssetType[] = ["tray", "trayUnread", "traySpeaking", "trayIdle", "trayMuted", "trayDeafened"];
+const STATUS_ASSETS = Object.values(STATUS_BADGES);
+const CUSTOMIZABLE_ASSETS: UserAssetType[] = ["splash", ...TRAY_ASSETS];
+const COUNT_BADGE_OPTIONS = [
+    ...NOTIFICATION_BADGE_ASSETS.map((value, index) => {
+        const count = index + 1;
+        return {
+            label: count === MAX_NOTIFICATION_BADGE_COUNT ? `${count}+ notifications` : String(count),
+            value
+        };
+    }),
+    { label: "Unread messages", value: UNREAD_BADGE_ASSET } as const
+];
 
 type AssetVersions = Record<UserAssetType, number>;
 
 function makeInitialVersions(): AssetVersions {
     const now = Date.now();
-    return Object.fromEntries(CUSTOMIZABLE_ASSETS.map(asset => [asset, now])) as AssetVersions;
+    const assets = [
+        ...CUSTOMIZABLE_ASSETS,
+        ...COUNT_BADGE_OPTIONS.map(({ value }) => value),
+        ...STATUS_ASSETS.map(({ asset }) => asset)
+    ];
+    return Object.fromEntries(assets.map(asset => [asset, now])) as AssetVersions;
 }
 
 export const UserAssetsButton: SettingsComponent = () => {
@@ -47,6 +61,7 @@ function openAssetsModal() {
 function AssetsModalContent() {
     const settings = useSettings();
     const [versions, setVersions] = useState<AssetVersions>(makeInitialVersions);
+    const [countBadge, setCountBadge] = useState(COUNT_BADGE_OPTIONS[0].value);
 
     const bumpVersions = (assets: UserAssetType[]) => {
         const now = Date.now();
@@ -90,11 +105,69 @@ function AssetsModalContent() {
             {CUSTOMIZABLE_ASSETS.map(asset => (
                 <Asset key={asset} asset={asset} version={versions[asset]} onChanged={() => bumpVersions([asset])} />
             ))}
+            {isWindows && (
+                <>
+                    <Divider />
+                    <section>
+                        <Text size="md" weight="medium" tag="h3" className={Margins.bottom8}>
+                            Taskbar Badges
+                        </Text>
+                        <Select
+                            options={[
+                                { label: "Notification count", value: "count" },
+                                { label: "User status", value: "status" }
+                            ]}
+                            closeOnSelect
+                            select={value => (settings.taskbarBadgeMode = value)}
+                            isSelected={value => value === settings.taskbarBadgeMode}
+                            serialize={value => value}
+                        />
+                    </section>
+                    {settings.taskbarBadgeMode === "status" ? (
+                        STATUS_ASSETS.map(({ asset, label }) => (
+                            <Asset
+                                key={asset}
+                                asset={asset}
+                                label={label}
+                                version={versions[asset]}
+                                onChanged={() => bumpVersions([asset])}
+                            />
+                        ))
+                    ) : (
+                        <>
+                            <Select
+                                options={COUNT_BADGE_OPTIONS}
+                                closeOnSelect
+                                select={setCountBadge}
+                                isSelected={value => value === countBadge}
+                                serialize={value => value}
+                            />
+                            <Asset
+                                key={countBadge}
+                                asset={countBadge}
+                                label={COUNT_BADGE_OPTIONS.find(({ value }) => value === countBadge)?.label}
+                                version={versions[countBadge]}
+                                onChanged={() => bumpVersions([countBadge])}
+                            />
+                        </>
+                    )}
+                </>
+            )}
         </div>
     );
 }
 
-function Asset({ asset, version, onChanged }: { asset: UserAssetType; version: number; onChanged: () => void }) {
+function Asset({
+    asset,
+    label,
+    version,
+    onChanged
+}: {
+    asset: UserAssetType;
+    label?: string;
+    version: number;
+    onChanged: () => void;
+}) {
     const settings = useSettings();
 
     const isSplash = asset === "splash";
@@ -115,7 +188,7 @@ function Asset({ asset, version, onChanged }: { asset: UserAssetType; version: n
     return (
         <section>
             <Text size="md" weight="medium" tag="h3">
-                {wordsToTitle(wordsFromCamel(asset))}
+                {label ?? wordsToTitle(wordsFromCamel(asset))}
             </Text>
             <div className="vcd-user-assets-asset">
                 <img

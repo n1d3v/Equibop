@@ -29,7 +29,7 @@ import { once } from "shared/utils/once";
 import type { SettingsStore } from "shared/utils/SettingsStore";
 
 import { createAboutWindow } from "./about";
-import { destroyAppBadge } from "./appBadge";
+import { destroyAppBadge, refreshWindowsBadge } from "./appBadge";
 import { CommandLine } from "./cli";
 import {
     BrowserUserAgent,
@@ -524,6 +524,7 @@ function createMainWindow() {
     win.on("focus", () => {
         win.flashFrame(false);
     });
+    if (process.platform === "win32") win.on("show", refreshWindowsBadge);
 
     initWindowBoundsListeners(win);
     if (!isDeckGameMode && (Settings.store.tray ?? true) && process.platform !== "darwin")

@@ -31,6 +31,7 @@ export interface Settings {
     hardwareVideoEncoding: boolean;
     arRPC: boolean;
     appBadge: boolean;
+    taskbarBadgeMode: "count" | "status";
     badgeOnlyForMentions: boolean;
     notificationType?: "balloon" | "custom";
     notificationBalloonPicture: "profile-picture" | "app-icon" | "hidden";

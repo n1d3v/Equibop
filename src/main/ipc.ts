@@ -25,7 +25,7 @@ import { STATIC_DIR } from "shared/paths";
 import { debounce } from "shared/utils/debounce";
 
 import { IpcEvents } from "../shared/IpcEvents";
-import { setBadgeCount } from "./appBadge";
+import { setBadgeCount, setBadgeStatus } from "./appBadge";
 import { autoStart } from "./autoStart";
 import { VENCORD_QUICKCSS_FILE, VENCORD_THEMES_DIR } from "./constants";
 import { AppEvents } from "./events";
@@ -163,6 +163,7 @@ handle(IpcEvents.SELECT_VENCORD_DIR, async (_e, value?: null) => {
 });
 
 handle(IpcEvents.SET_BADGE_COUNT, (_, count: number) => setBadgeCount(count));
+handle(IpcEvents.SET_BADGE_STATUS, (_, status: unknown) => setBadgeStatus(status));
 
 handle(IpcEvents.FLASH_FRAME, (_, flag: boolean) => {
     if (!mainWin || mainWin.isDestroyed() || (flag && mainWin.isFocused())) return;

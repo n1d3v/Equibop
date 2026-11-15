@@ -4,11 +4,12 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-import { filters, waitFor } from "@equicord/types/webpack";
-import { RelationshipStore } from "@equicord/types/webpack/common";
+import { filters, onceReady, waitFor } from "@equicord/types/webpack";
+import { RelationshipStore, SelfPresenceStore, UserStore } from "@equicord/types/webpack/common";
 
 import { VesktopLogger } from "./logger";
 import { Settings } from "./settings";
+import { isWindows } from "./utils";
 
 let GuildReadStateStore: any;
 let NotificationSettingsStore: any;
@@ -28,7 +29,9 @@ export function setBadge() {
             totalCount = -1;
         }
 
-        VesktopNative.app.setBadgeCount(totalCount);
+        VesktopNative.app.setBadgeCount(totalCount).catch(error => {
+            VesktopLogger.error("Failed to update badge count", error);
+        });
     } catch (e) {
         VesktopLogger.error("Failed to update badge count", e);
     }
@@ -49,3 +52,21 @@ function waitForAndSubscribeToStore(name: string, cb?: (m: any) => void) {
 waitForAndSubscribeToStore("GuildReadStateStore", store => (GuildReadStateStore = store));
 waitForAndSubscribeToStore("NotificationSettingsStore", store => (NotificationSettingsStore = store));
 waitForAndSubscribeToStore("RelationshipStore");
+
+if (isWindows) {
+    onceReady.then(() => {
+        let lastStatus: string | null | undefined;
+        const updateStatus = () => {
+            const status = UserStore.getCurrentUser() ? SelfPresenceStore.getStatus() : null;
+            if (status === lastStatus) return;
+            lastStatus = status;
+            VesktopNative.app.setBadgeStatus(status).catch(error => {
+                VesktopLogger.error("Failed to update the taskbar status badge", error);
+            });
+        };
+
+        SelfPresenceStore.addChangeListener(updateStatus);
+        UserStore.addChangeListener(updateStatus);
+        updateStatus();
+    });
+}

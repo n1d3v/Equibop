@@ -18,7 +18,6 @@
         "buildLibVesktop": "bun install --cwd packages/libvesktop && bun run --cwd packages/libvesktop build",
         "package": "bun run build && electron-builder",
         "package:dir": "bun run build && electron-builder --dir",
-        "package-no-arrpc": "bun run scripts/build/packageNoArrpc.mts",
         "lint": "oxlint src scripts packages/discord-rpc",
         "lint:fix": "bun run lint --fix",
         "fmt": "oxfmt",

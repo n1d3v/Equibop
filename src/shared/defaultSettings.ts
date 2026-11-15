@@ -32,6 +32,7 @@ export const DefaultEquibopSettings: Settings = {
     autoStartMinimized: false,
     webRTCIPHandlingPolicy: "default",
     appBadge: true,
+    taskbarBadgeMode: "count",
     badgeOnlyForMentions: false,
     notificationBalloonPicture: "profile-picture",
     transparencyOption: "none"
