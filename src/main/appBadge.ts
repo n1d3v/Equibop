@@ -19,6 +19,7 @@ import { AppEvents } from "./events";
 import { mainWin } from "./mainWindow";
 import { Settings } from "./settings";
 import { resolveAssetPath, type UserAssetType } from "./userAssets";
+import { setTaskbarOverlay, watchTaskbarButton } from "./utils/taskbarOverlay";
 
 const imgCache = new Map<UserAssetType, NativeImage>();
 let lastBadge: { window: BrowserWindow; asset: TaskbarBadgeAsset | null } | undefined;
@@ -55,7 +56,14 @@ if (process.platform === "win32") {
     Settings.addChangeListener("appBadge", refreshWindowsBadge);
 }
 
-export function refreshWindowsBadge() {
+export function initWindowsBadge(win: BrowserWindow) {
+    if (process.platform !== "win32") return;
+
+    win.on("show", refreshWindowsBadge);
+    watchTaskbarButton(win, refreshWindowsBadge);
+}
+
+function refreshWindowsBadge() {
     lastBadge = undefined;
     updateWindowsBadge().catch(error => console.error("Failed to update the taskbar badge:", error));
 }
@@ -78,7 +86,7 @@ async function updateWindowsBadge() {
     if (update !== badgeUpdate || win.isDestroyed() || mainWin !== win) return;
 
     if (asset && image) imgCache.set(asset, image);
-    win.setOverlayIcon(image ?? null, description);
+    setTaskbarOverlay(win, image ?? null, description);
     lastBadge = { window: win, asset };
 }
 
