@@ -81,6 +81,7 @@ function getNotificationFrame({ sender, senderFrame }: IpcMainInvokeEvent) {
 function truncateBalloonText(text: string, limit: number) {
     return text
         .replaceAll("\0", "")
+        .replace(/[\u2066-\u2069]/g, "")
         .slice(0, limit)
         .replace(/[\uD800-\uDBFF]$/, "");
 }
